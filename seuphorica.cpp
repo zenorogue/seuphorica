@@ -92,6 +92,12 @@ enum class sp {
   radiating, tricky, soothing, wild, portal, first_artifact
   };
 
+stringstream game_log;
+
+void add_to_log(const string& s) {
+  game_log << s << "<br/>\n";
+  }
+
 map<sp, vector<sp>> artifacts;
 
 struct tile {
@@ -172,6 +178,14 @@ string power_description(const tile &t) {
     return ss.str();
     }
   return power_description(gsp(t), t.rarity);
+  }
+
+string short_desc(const tile& t) {
+  auto& s = gsp(t);
+  string out = s.caption;
+  if(t.rarity == 2) out = "Rare " + out;
+  if(t.rarity == 3) out = "Epic " + out;
+  return out;
   }
 
 string tile_desc(const tile& t) {
@@ -583,6 +597,7 @@ void draw_board() {
     if(ev.valid_move) ss << "<a onclick='play()'>play!</a><br/>";
   ss << "<a onclick='view_help()'>view help</a>";
   ss << " - <a onclick='view_dictionary()'>dictionary</a>";
+  ss << " - <a onclick='view_game_log()'>view game log</a>";
   ss << "</div></div>";
   ss << "</div>";
 
@@ -640,6 +655,18 @@ void sort_by(int i) {
     stable_sort(deck.begin(), deck.end(), f);
     }
   check_discard();
+  }
+
+void view_game_log() {
+  stringstream ss;
+  ss << "<div style=\"float:left;width:30%\">&nbsp;</div>";
+  ss << "<div style=\"float:left;width:40%\">";
+  ss << "<a onclick='back_to_game()'>back to game</a><br/><br/>";
+  ss << game_log.str();
+  ss << "<br/><a onclick='back_to_game()'>back to game</a>";
+  ss << "</div>";
+  ss << "</div>";
+  set_value("output", ss.str());
   }
 
 void view_help() {
@@ -774,6 +801,7 @@ sp generate_artifact() {
   }
 
 void build_shop(int qty = 6) {
+  for(auto& t: shop) add_to_log("ignored: "+short_desc(t)+ " for " + to_string(t.price));
   shop.clear();
   for(int i=0; i < qty; i++) {
     char l = 'A' + rand() % 26;
@@ -808,6 +836,7 @@ bool under_radiation(coord c) {
   }
 
 void accept_move() {
+  int tax_paid = tax();
   cash += ev.total_score - tax();
   total_gain += ev.total_score;
   roundindex++;
@@ -830,6 +859,8 @@ void accept_move() {
 
   for(auto& p: just_placed) {
     auto& b = board.at(p);
+    if(b.price) add_to_log("bought: "+short_desc(b)+ " for " + to_string(b.price));
+    add_to_log("on (" + to_string(p.x) + "," + to_string(p.y) + "): " + short_desc(board.at(p)));
     b.price = 0;
     int selftrash = 0;
     if(has_power(b, sp::trasher)) selftrash = 1;
@@ -845,14 +876,18 @@ void accept_move() {
   vector<tile> retained;
   for(auto& p: drawn) {
     if(retain) {
+      add_to_log("retaining " + short_desc(p));
       retain--;
       retained.push_back(p);
       p.value += (teach-1);
       continue;
       }
+    add_to_log("unused " + short_desc(p));
     p.value += teach;
     for(int c=0; c<copies_unused; c++) discard.push_back(p);
     }
+  add_to_log(ev.current_scoring);
+  add_to_log("total score: "+to_string(ev.total_score)+" tax: "+to_string(tax_paid)+" cash in round "+to_string(roundindex)+": " + to_string(cash));
   drawn = retained;
   draw_tiles(qdraw);
   just_placed.clear();
@@ -871,6 +906,7 @@ int init(bool _is_mobile) {
     board.emplace(coord{x++, 7}, tile{c, sp::placed});
     }
   srand(time(NULL));
+  add_to_log("started SEUPHORICA");
   draw_tiles();
   build_shop();
   draw_board();
