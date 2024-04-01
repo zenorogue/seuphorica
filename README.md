@@ -10,7 +10,9 @@ V2: fixed the missing scrollbars
 
 V3: tricky tiles, reversing tiles, nerfed retainers, fixed missing graphics for horizontal, mirror tiles have a possible multiplier bonus, more interesting interaction between retainers/teachers/trashers
 
-Plans: portal tiles, randart tiles, better dictionary, better balance
+V4: portal tiles, wild tiles, soothing tiles
+
+Plans: randart tiles, better dictionary, better balance
 
 Click [this](https://zenorogue.github.io/seuphorica/) to play!
 
