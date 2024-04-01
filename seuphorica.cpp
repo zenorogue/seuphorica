@@ -197,7 +197,7 @@ void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
       pa1.add(vec(x+l1, y+a));
       pa1.add(vec(x+l9, y+a));
       pa1.onclick = onc;
-      p += pa;
+      p += pa1;
       }
     }
 
