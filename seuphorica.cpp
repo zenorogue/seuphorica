@@ -89,8 +89,10 @@ enum class sp {
   flying, bending, reversing,
   teacher, trasher, duplicator, retain, 
   drawing, rich,
-  radiating, tricky, soothing, wild, portal
+  radiating, tricky, soothing, wild, portal, first_artifact
   };
+
+map<sp, vector<sp>> artifacts;
 
 struct tile {
   int id;
@@ -160,6 +162,15 @@ string power_description(const special& s, int rarity) {
   }
 
 string power_description(const tile &t) {
+  if(t.special >= sp::first_artifact) {
+    stringstream ss;
+    int qty = 0;
+    for(auto p: artifacts[t.special]) {
+      if(qty) ss << " + ";
+      ss << power_description(gsp(p), 1);
+      }
+    return ss.str();
+    }
   return power_description(gsp(t), t.rarity);
   }
 
@@ -184,6 +195,10 @@ string tile_desc(const tile& t) {
 bool has_power(const tile& t, sp which, int& val) {
   auto& s = gsp(t);
   if(t.special == which) { val = s.value * t.rarity; return true; }
+  if(t.special >= sp::first_artifact) {
+    const auto& artifact = artifacts[t.special];
+    for(auto w: artifact) if(w == which) { val = s.value; return true; }
+    }
   return false;
   }
 
@@ -725,13 +740,42 @@ void draw_tiles(int qty = 8) {
     }
   }
 
+sp basic_special() {
+  int q = 0;
+  while(q < 2) {
+    q = rand() % int(sp::first_artifact);
+    }
+  return sp(q);
+  }
+
+sp generate_artifact() {
+  int next = int(specials.size());
+  specials.emplace_back();
+  auto& gs = specials.back();
+  string artadj[10] = {"Ancient ", "Embroidered", "Glowing ", "Shiny ", "Powerful ", "Forgotten ", "Demonic ", "Angelic ", "Great ", "Magical "};
+  string artnoun[10] = {"Glyph", "Rune", "Letter", "Symbol", "Character", "Mark", "Figure", "Sign", "Scribble", "Doodle"};
+  auto spec = sp(next);
+  gs.caption = artadj[rand() % 10] + artnoun[rand() % 10];
+  gs.background = rand() % 0x1000000; gs.background |= 0xFF000000;
+  gs.text_color = 0xFF000000;
+  if(!(gs.text_color & 0x800000)) gs.text_color |= 0xFF0000;
+  if(!(gs.text_color & 0x008000)) gs.text_color |= 0x00FF00;
+  if(!(gs.text_color & 0x000080)) gs.text_color |= 0x0000FF;
+  auto& art = artifacts[spec];
+  while(true) {
+    art.clear();
+    for(int i=0; i<3; i++) art.push_back(basic_special());
+    bool reps = false;
+    for(int i=0; i<3; i++) for(int j=0; j<i; j++) if(art[i] == art[j]) reps = true;
+    if(reps) continue;
+    break;
+    }
+  return spec;
+  }
+
 void build_shop(int qty = 6) {
   shop.clear();
   for(int i=0; i < qty; i++) {
-    int q = 0;
-    while(q < 2) {
-      q = rand() % int(specials.size());
-      }
     char l = 'A' + rand() % 26;
     if(i == 0) l = "AEIOU" [rand() % 5];
     int val = 1;
@@ -739,11 +783,15 @@ void build_shop(int qty = 6) {
     int min_price = get_min_price(roundindex);
     int price = min_price + rand() % (max_price - min_price + 1);
     while(rand() % 5 == 0) val++, price += 1 + rand() % roundindex;
-    tile t(l, sp(q), val);
+    tile t(l, basic_special(), val);
     if(gsp(t).value) {
       int d = rand() % (10 * roundindex);
-      if(d >= 100) { t.rarity = 2; price *= 3; }
-      if(d >= 300) { t.rarity = 3; price *= 10; }
+      if(d >= 200 && rand() % 100 < 50) {
+        t.special = generate_artifact();
+        price *= 6;
+        }
+      else if(d >= 300) { t.rarity = 3; price *= 10; }
+      else if(d >= 100) { t.rarity = 2; price *= 3; }
       }
     t.price = price;
     shop.push_back(t);
