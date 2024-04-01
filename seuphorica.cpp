@@ -143,7 +143,7 @@ vector<tile> deck;
 vector<tile> discard;
 vector<tile> shop;
 
-tile empty(0, sp::notile);
+tile empty_tile(0, sp::notile);
 
 special &gsp(tile &t) {
   return specials[int(t.special)];
@@ -446,7 +446,7 @@ void draw_board() {
   for(int y=miny; y<maxy; y++)
   for(int x=minx; x<maxx; x++) {
     string s = " onclick = 'drop_hand_on(" + to_string(x) + "," + to_string(y) + ")'";
-    render_tile(p, x*lsize, y*lsize, empty, s);
+    render_tile(p, x*lsize, y*lsize, empty_tile, s);
     int c = get_color({x, y});
     if(c) {
       style bred(0, 0xFFFF0000, 0);
@@ -531,7 +531,7 @@ void draw_board() {
     }
   if(drawn.size() && drawn[0].price) {
     pic p;
-    render_tile(p, 0, 0, empty, " onclick='back_to_shop()'");
+    render_tile(p, 0, 0, empty_tile, " onclick='back_to_shop()'");
     ss << SVG_to_string(p) << " cancel the purchase<br/>";
     }
   ss << "</div>";
