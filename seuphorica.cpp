@@ -950,6 +950,7 @@ extern "C" {
     }
 
   void cheat() {
+    cash += 1000000;
     for(auto t: discard) drawn.push_back(t);
     for(auto t: deck) drawn.push_back(t);
     discard.clear(); deck.clear(); draw_board();
