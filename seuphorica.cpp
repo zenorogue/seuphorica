@@ -56,10 +56,10 @@ vector<special> specials = {
   {"Mirror", "words going across go down after this letter, and vice versa", 0, 0xFF303030, 0xFF4040FF},
 
   /* unused-tile effects */
-  {"Teacher", "if used, %+d value to all the drawn but unused tiles", 1, 0xFFFF40FF, 0xFF000000},
-  {"Trasher", "all unused tiles, as well as this, are premanently deleted", 0, 0xFF000000, 0xFFFFFFFF},
+  {"Teacher", "if used, %+d value to all the unused tiles", 1, 0xFFFF40FF, 0xFF000000},
+  {"Trasher", "all discarded unused tiles, as well as this, are premanently deleted", 0, 0xFF000000, 0xFFFFFFFF},
   {"Duplicator", "%+d copies of all used tiles (but this one is deleted)", 1, 0xFFFF40FF, 0xFF00C000},
-  {"Retain", "all unused tiles are retained for the next turn", 0, 0xFF905000, 0xFFFFFFFF},
+  {"Retain", "%d first unused tiles are retained for the next turn", 4, 0xFF905000, 0xFFFFFFFF},
 
   /* next-turn effects */
   {"Drawing", "%+d draw in the next round", 4, 0xFFFFC080, 0xFF000000},
@@ -637,7 +637,7 @@ void accept_move() {
   total_gain += ev.total_score;
   roundindex++;
   int qdraw = 8, qshop = 6, teach = 1, copies_unused = 1, copies_used = 1;
-  bool retain = false;
+  int retain = 0;
 
   for(auto& p: ev.used_tiles) {
     auto& b = board.at(p);
@@ -648,7 +648,7 @@ void accept_move() {
     if(b.special == sp::teacher) teach += val;
     if(b.special == sp::trasher) copies_unused--;
     if(b.special == sp::duplicator) copies_used += val;
-    if(b.special == sp::retain) retain = true;
+    if(b.special == sp::retain) retain += val;
     }
 
   for(auto& p: just_placed) {
@@ -661,13 +661,18 @@ void accept_move() {
       b.special = sp::placed;
     }
   for(auto& p: drawn) p.price = 0;
-  if(!retain) {
-    for(auto& p: drawn) {
-      p.value += teach;
-      for(int c=0; c<copies_unused; c++) discard.push_back(p);
+  vector<tile> retained;
+  for(auto& p: drawn) {
+    if(retain) {
+      retain--;
+      retained.push_back(p);
+      p.value += (teach-1);
+      continue;
       }
-    drawn.clear();
+    p.value += teach;
+    for(int c=0; c<copies_unused; c++) discard.push_back(p);
     }
+  drawn = retained;
   draw_tiles(qdraw);
   just_placed.clear();
   build_shop(qshop);
