@@ -77,6 +77,7 @@ vector<special> specials = {
   /* other */
   {"Radiating", "8 adjacent tiles keep their special properties", 0, 0xFF004000, 0xFF80FF80},
   {"Tricky", "all valid subwords including this letter are taken into account for scoring (each counting just once)", 0, 0xFF808040, 0xFFFFFF80},
+  {"Soothing", "every failed multiplier tile becomes %+d multiplier (does not stack)", 1, 0xFFFF8080, 0xFF800000},
   };
 
 enum class sp {
@@ -86,7 +87,7 @@ enum class sp {
   flying, bending, reversing,
   teacher, trasher, duplicator, retain, 
   drawing, rich,
-  radiating, tricky };
+  radiating, tricky, soothing };
 
 struct tile {
   int id;
@@ -324,6 +325,8 @@ void compute_score() {
     bool optional = board.count(at-next);
     vector<coord> allword;
     int rmul = 1;
+    int qsooth = 0;
+    int sooth = 0, rsooth = 0;
 
     while(board.count(at)) {
       needed.erase(at);
@@ -337,9 +340,11 @@ void compute_score() {
 
       auto affect_mul = [&] (bool b, bool ways = 3) {
         if(b) { if(ways & 1) mul += val; if(ways & 2) rmul += val; }
+        if(!b) { if(ways & 1) sooth++; if(ways & 2) rsooth++; }
         };
 
       if(b.special == sp::tricky) has_tricky = true;
+      if(b.special == sp::soothing) qsooth = max(qsooth, val);
       if(b.special == sp::reversing) has_reverse = true;
       if(b.special == sp::bending) next = next.mirror();
       if(b.special == sp::premium) affect_mul(true);
@@ -356,32 +361,36 @@ void compute_score() {
       if(b.special == sp::initial) affect_mul(!board.count(at), 2);
       index++;
       if(has_tricky && ok(word) && board.count(at) && !old_tricks.count(allword)) {
-        scoring << "<b>" << word << ":</b> " << placed << "*" << all << "*" << mul << " = " << placed*all*mul << "<br/>";
-        ev.total_score += placed * all * mul;
+        int mul1 = mul + qsooth * sooth;
+        scoring << "<b>" << word << ":</b> " << placed << "*" << all << "*" << mul1 << " = " << placed*all*mul1 << "<br/>";
+        ev.total_score += placed * all * mul1;
         ev.new_tricks.insert(allword);
         }
       if(has_tricky && has_reverse && ok(revword(word)) && board.count(at) && !old_tricks.count(allword)) {
-        scoring << "<b>" << revword(word) << ":</b> " << placed << "*" << all << "*" << rmul << " = " << placed*all*rmul << "<br/>";
-        ev.total_score += placed * all * rmul;
+        int mul1 = rmul + qsooth * rsooth;
+        scoring << "<b>" << revword(word) << ":</b> " << placed << "*" << all << "*" << mul1 << " = " << placed*all*mul1 << "<br/>";
+        ev.total_score += placed * all * mul1;
         ev.new_tricks.insert(allword);
         }
       }
     if(needed.empty()) ev.valid_move = true;
     bool is_legal = ok(word);
     if(!is_legal && has_reverse && ok(revword(word))) {
-      has_reverse = false; is_legal = true; swap(mul, rmul); word = revword(word);
+      has_reverse = false; is_legal = true; swap(mul, rmul); swap(sooth, rsooth); word = revword(word);
       }
     if(!is_legal && optional) continue;
-    scoring << "<b>" << word << ":</b> " << placed << "*" << all << "*" << mul << " = " << placed*all*mul;
+    int mul1 = mul + qsooth * sooth;
+    scoring << "<b>" << word << ":</b> " << placed << "*" << all << "*" << mul1 << " = " << placed*all*mul1;
     if(!is_legal) { scoring << " <font color='#FF4040'>(illegal word!)</font>"; illegal_words = true; }
     scoring << "<br/>";
     if(placed != all) is_crossing = true;
     ev.total_score += placed * all * mul;
 
     if(is_legal && has_reverse && ok(revword(word))) {
-      swap(mul, rmul); word = revword(word);
-      scoring << "<b>" << word << ":</b> " << placed << "*" << all << "*" << mul << " = " << placed*all*mul << "<br/>";
-      ev.total_score += placed * all * mul;
+      swap(mul, rmul); swap(sooth, rsooth); word = revword(word);
+      mul1 = mul + qsooth * sooth;
+      scoring << "<b>" << word << ":</b> " << placed << "*" << all << "*" << mul1 << " = " << placed*all*mul1 << "<br/>";
+      ev.total_score += placed * all * mul1;
       }
     }
 
