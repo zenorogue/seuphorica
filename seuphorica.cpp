@@ -571,7 +571,7 @@ void draw_board() {
     // int pos = sts.find("svg");
     // sts.insert(pos+4, "draggable=\"true\" ondragstart=\"drag(event)\" onclick=\"alert('clicked!')\" ");
     ss << sts + " " + tile_desc(t);
-    if(has_power(t, sp::tricky)) {
+    if(has_power(t, sp::wild)) {
       for(char ch='A'; ch <= 'Z'; ch++)
         ss << " <a onclick='wild_become(" << id-1 << ", \"" << ch << "\")'>" << ch << "</a>";
       }
