@@ -79,6 +79,7 @@ vector<special> specials = {
   {"Tricky", "all valid subwords including this letter are taken into account for scoring (each counting just once)", 0, 0xFF808040, 0xFFFFFF80},
   {"Soothing", "every failed multiplier tile becomes %+d multiplier (does not stack)", 1, 0xFFFF8080, 0xFF800000},
   {"Wild", "you can rewrite the letter while it is in your hand", 0, 0xFF800000, 0xFFFF8000},
+  {"Portal", "placed in two locations; teleports between them (max distance %d)", 6, 0xFF000080, 0xFFFFFFFF},
   };
 
 enum class sp {
@@ -88,7 +89,8 @@ enum class sp {
   flying, bending, reversing,
   teacher, trasher, duplicator, retain, 
   drawing, rich,
-  radiating, tricky, soothing, wild };
+  radiating, tricky, soothing, wild, portal
+  };
 
 struct tile {
   int id;
@@ -120,6 +122,11 @@ map<coord, tile> board;
 map<coord, int> colors;
 
 set<vector<coord>> old_tricks;
+
+map<coord, coord> portals;
+
+bool placing_portal;
+coord portal_from(0, 0);
 
 int get_color(coord c) {
   if(!colors.count(c)) { 
@@ -185,6 +192,15 @@ void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
 
   if(t.special == sp::bending) {
     style bmirror(0xFFC0C0FF, 0, 5);
+    path pa1(bmirror);
+    pa1.add(vec(x, y));
+    pa1.add(vec(x+l9, y+l9));
+    pa1.onclick = onc;
+    p += pa1;
+    }
+
+  if(t.special == sp::portal) {
+    style bmirror(0xFFFF8000, 0, 5);
     path pa1(bmirror);
     pa1.add(vec(x, y));
     pa1.add(vec(x+l9, y+l9));
@@ -280,18 +296,28 @@ struct eval {
 eval ev;
 
 void compute_score() {
+
+  if(placing_portal) { ev.current_scoring = "You must finish placing the portal";  ev.valid_move = false; return; }
+
   set<pair<coord, coord>> starts;
 
   for(auto p: just_placed) {
     for(coord dir: { coord(1,0), coord(0,1) }) {
       coord prev = -dir;
       if(board.at(p).special == sp::bending) prev = prev.mirror();
-      if(board.count(p+dir) || board.count(p+prev)) {
+      auto p1 = p;
+      if(board.at(p).special == sp::portal) p = portals.at(p);
+      bool seen_tricky = false;
+      if(board.count(p1+dir) || board.count(p+prev)) {
+        int steps = 0;
         auto at = p;
         while(board.count(at + prev)) {
-          if(board.at(p).special == sp::tricky) starts.emplace(at, -prev);
+          steps++; if(steps >= 10000) { ev.current_scoring = "Cannot create infinite words"; ev.valid_move = false; return; }
+          if(board.at(at).special == sp::tricky) seen_tricky = true;
+          if(seen_tricky) starts.emplace(at, -prev);
           at = at + prev;
           if(board.at(at).special == sp::bending) prev = prev.mirror();
+          if(board.at(at).special == sp::portal) at = portals.at(at);
           }
         starts.emplace(at, -prev);
         }
@@ -348,6 +374,7 @@ void compute_score() {
       if(b.special == sp::soothing) qsooth = max(qsooth, val);
       if(b.special == sp::reversing) has_reverse = true;
       if(b.special == sp::bending) next = next.mirror();
+      if(b.special == sp::portal) { at = portals.at(at); ev.used_tiles.insert(at); needed.erase(at); }
       if(b.special == sp::premium) affect_mul(true);
       if(b.special == sp::horizontal) affect_mul(next.x);
       if(b.special == sp::vertical) affect_mul(next.y);
@@ -440,6 +467,23 @@ void draw_board() {
     string s ="";
     if(just_placed.count({x, y})) s = " onclick = 'back_from_board(" + to_string(x) + "," + to_string(y) + ")'";
     render_tile(p, x*lsize, y*lsize, board.at({x,y}), s);
+    }
+
+  for(int y=miny; y<maxy; y++)
+  for(int x=minx; x<maxx; x++) if(portals.count({x, y})) {
+    auto c1 = portals.at({x, y});
+    int l1 = lsize*1/10;
+    int l9 = lsize*9/10;
+    style borange(0x80FF8000, 0, 3);
+    style bblue(0x800000FF, 0, 3);
+    path pa1(borange);
+    pa1.add(vec(x*lsize + l1, y*lsize+l1));
+    pa1.add(vec(c1.x*lsize + l1, c1.y*lsize+l1));
+    p += pa1;
+    path pa2(bblue);
+    pa2.add(vec(x*lsize + l9, y*lsize+l9));
+    pa2.add(vec(c1.x*lsize + l9, c1.y*lsize+l9));
+    p += pa2;
     }
 
   stringstream ss;
@@ -718,7 +762,7 @@ void accept_move() {
     if(b.special != sp::trasher && b.special != sp::duplicator)
       for(int i=0; i<copies_used; i++) discard.push_back(b);
     auto& sp = gsp(b);
-    if(b.special != sp::bending && b.special != sp::reversing && !under_radiation(p))
+    if(b.special != sp::bending && b.special != sp::portal && b.special != sp::reversing && !under_radiation(p))
       b.special = sp::placed;
     }
   for(auto& p: drawn) p.price = 0;
@@ -757,11 +801,34 @@ int init(bool _is_mobile) {
   return 0;
   }
 
+int dist(coord a, coord b) {
+  return max(abs(a.x-b.x), abs(a.y-b.y));
+  }
+
 extern "C" {
   void start(bool mobile) { init(mobile); }
   
+  void back_from_board(int x, int y);
+
   void drop_hand_on(int x, int y) {
-    if(drawn.size()) { board.emplace(coord{x,y}, std::move(drawn[0])); just_placed.insert(coord{x,y}); drawn.erase(drawn.begin()); draw_board(); }
+    coord c(x, y);
+    if(placing_portal) {
+      auto t = board.at(portal_from);
+      int d = dist(portal_from, c);
+      if(d > t.rarity * gsp(t).value) { placing_portal = false; back_from_board(portal_from.x, portal_from.y); return; }
+      board.emplace(c, t);
+      portals.emplace(c, portal_from);
+      portals.emplace(portal_from, c);
+      just_placed.insert(c);
+      placing_portal = false;
+      draw_board();
+      return;
+      }
+    if(drawn.size()) {
+       board.emplace(c, std::move(drawn[0])); just_placed.insert(c); drawn.erase(drawn.begin());
+       if(board.at(c).special == sp::portal) { placing_portal = true; portal_from = c; }
+       draw_board();
+       }
     }
 
   void back_to_drawn() {
@@ -776,10 +843,12 @@ extern "C" {
     }
 
   void back_from_board(int x, int y) {
-    if(!just_placed.count({x, y})) return;
-    if(!board.count({x, y})) return;
-    drawn.insert(drawn.begin(), board.at({x,y}));
-    board.erase({x, y}); just_placed.erase({x,y});
+    coord c(x, y);
+    if(!just_placed.count(c)) return;
+    if(!board.count(c)) return;
+    drawn.insert(drawn.begin(), board.at(c));
+    board.erase(c); just_placed.erase(c);
+    if(portals.count(c)) { auto c1 = portals.at(c); portals.erase(c); portals.erase(c1); board.erase(c1); just_placed.erase(c1); }
     draw_board();
     }
 
