@@ -198,6 +198,7 @@
       function view_help() { Module.ccall('view_help', 'null', [], []) }
       function update_dict(s) { Module.ccall('update_dict', 'null', ['string'], [s]) }
       function view_dictionary() { Module.ccall('view_dictionary', 'null', [], []) }
+      function wild_become(int, s) { Module.ccall('wild_become', 'null', ['int', 'string'], [i, s]) }
       function back_to_game() { Module.ccall('back_to_game', 'null', [], []) }
       function back_to_shop() { Module.ccall('back_to_shop', 'null', [], []) }
       Module.postRun = [doit]

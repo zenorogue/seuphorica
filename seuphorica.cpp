@@ -78,6 +78,7 @@ vector<special> specials = {
   {"Radiating", "8 adjacent tiles keep their special properties", 0, 0xFF004000, 0xFF80FF80},
   {"Tricky", "all valid subwords including this letter are taken into account for scoring (each counting just once)", 0, 0xFF808040, 0xFFFFFF80},
   {"Soothing", "every failed multiplier tile becomes %+d multiplier (does not stack)", 1, 0xFFFF8080, 0xFF800000},
+  {"Wild", "you can rewrite the letter while it is in your hand", 0, 0xFF800000, 0xFFFF8000},
   };
 
 enum class sp {
@@ -87,7 +88,7 @@ enum class sp {
   flying, bending, reversing,
   teacher, trasher, duplicator, retain, 
   drawing, rich,
-  radiating, tricky, soothing };
+  radiating, tricky, soothing, wild };
 
 struct tile {
   int id;
@@ -462,7 +463,12 @@ void draw_board() {
     string sts = SVG_to_string(p);
     // int pos = sts.find("svg");
     // sts.insert(pos+4, "draggable=\"true\" ondragstart=\"drag(event)\" onclick=\"alert('clicked!')\" ");
-    ss << sts + " " + tile_desc(t) + " <br/>";
+    ss << sts + " " + tile_desc(t);
+    if(t.special == sp::wild) {
+      for(char ch='A'; ch <= 'Z'; ch++)
+        ss << " <a onclick='wild_become(" << id-1 << ", \"" << ch << "\")'>" << ch << "</a>";
+      }
+    ss << "<br/>";
     }
   ss << "</div>";
 
@@ -789,6 +795,10 @@ extern "C" {
     }
 
   void back_to_game() { draw_board(); }
+
+  void wild_become(int id, const char *s) {
+    if(drawn.size() > id && drawn[id].special == sp::wild) drawn[id].letter = s[0];
+    }
 
   void play() {
     if(ev.valid_move) accept_move();
