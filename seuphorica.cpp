@@ -36,6 +36,10 @@ void read_dictionary() {
   dictionary[10].insert("SEUPHORICA");
   }
 
+bool ok(const string& word) {
+  return dictionary[word.size()].count(word);
+  }
+
 vector<special> specials = {
   {"No Tile", "", 0, 0xFF000000, 0xFF000000}, 
   {"Placed", "", 0, 0xFFFFFFFF, 0xFF000000},   
@@ -334,14 +338,14 @@ void compute_score() {
       at = at + next;
       if(b.special == sp::final && !board.count(at)) mul += val;
       index++;
-      if(has_tricky && dictionary[word.size()].count(word) && board.count(at) && !old_tricks.count(allword)) {
+      if(has_tricky && ok(word) && board.count(at) && !old_tricks.count(allword)) {
         scoring << "<b>" << word << ":</b> " << placed << "*" << all << "*" << mul << " = " << placed*all*mul;
         ev.total_score += placed * all * mul;
         ev.new_tricks.insert(allword);
         }
       }
     if(needed.empty()) ev.valid_move = true;
-    bool is_legal = dictionary[word.size()].count(word);
+    bool is_legal = ok(word);
     scoring << "<b>" << word << ":</b> " << placed << "*" << all << "*" << mul << " = " << placed*all*mul;
     if(!is_legal) { scoring << " <font color='#FF4040'>(illegal word!)</font>"; illegal_words = true; }
     scoring << "<br/>";
