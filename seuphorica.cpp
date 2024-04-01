@@ -229,9 +229,11 @@ bool has_power(const tile& t, sp which) {
 void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
   auto& s = gsp(t);
   unsigned lines = 0xFF000000;
-  if(t.rarity == 2) lines = 0xFF4040FF;
-  if(t.rarity == 3) lines = 0xFFFF80FF;
-  style b(lines, s.background, t.rarity > 1 ? 3 : 1.5);
+  int wide = 1;
+  if(t.rarity == 2) lines = 0xFF4040FF, wide = 2;
+  if(t.rarity == 3) lines = 0xFFFF80FF, wide = 2;
+  if(t.special >= sp::first_artifact) lines = 0xFFFFD500, wide = 2;
+  style b(lines, s.background, 1.5 * wide);
   style bempty(0xFF808080, 0xFF101010, 0.5);
 
   path pa(t.letter ? b : bempty);
