@@ -62,7 +62,7 @@ vector<special> specials = {
   /* placement */
   {"Flying", "exempt from the rule that all tiles must be in a single word", 0, 0xFF8080FF, 0xFFFFFFFF},
   {"Mirror", "words going across go down after this letter, and vice versa; %+d multiplier when tiles on all 4 adjacent cells", 3, 0xFF303030, 0xFF4040FF},
-  {"Reversing", "words going across go down after this letter, and vice versa; %+d multiplier when tiles on all 4 adjacent cells", 3, 0xFF404000, 0xFFFFFF80},
+  {"Reversing", "words are accepted when written in reverse; if both valid, both score", 0, 0xFF404000, 0xFFFFFF80},
 
   /* unused-tile effects */
   {"Teacher", "if used, %+d value to all the unused tiles", 1, 0xFFFF40FF, 0xFF000000},
