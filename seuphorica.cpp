@@ -333,7 +333,7 @@ void compute_score() {
   bool is_crossing = false;
 
   bool fly_away = false;
-  for(auto p: just_placed) {
+  for(auto p: just_placed) if(board.at(p).special == sp::flying) {
     fly_away = true;
     for(auto v: {coord(1,0), coord(-1,0), coord(0,1), coord(0,-1)}) if(board.count(p+v)) fly_away = false;
     if(fly_away) break;
