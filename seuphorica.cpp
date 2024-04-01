@@ -789,7 +789,7 @@ sp generate_artifact() {
   int next = int(specials.size());
   specials.emplace_back();
   auto& gs = specials.back();
-  string artadj[10] = {"Ancient ", "Embroidered", "Glowing ", "Shiny ", "Powerful ", "Forgotten ", "Demonic ", "Angelic ", "Great ", "Magical "};
+  string artadj[10] = {"Ancient ", "Embroidered ", "Glowing ", "Shiny ", "Powerful ", "Forgotten ", "Demonic ", "Angelic ", "Great ", "Magical "};
   string artnoun[10] = {"Glyph", "Rune", "Letter", "Symbol", "Character", "Mark", "Figure", "Sign", "Scribble", "Doodle"};
   auto spec = sp(next);
   gs.caption = artadj[rand() % 10] + artnoun[rand() % 10];
