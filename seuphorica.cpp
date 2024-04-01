@@ -173,7 +173,7 @@ string power_description(const tile &t) {
     stringstream ss;
     int qty = 0;
     for(auto p: artifacts[t.special]) {
-      if(qty) ss << " + ";
+      if(qty) ss << "; "; qty++;
       ss << power_description(gsp(p), 1);
       }
     return ss.str();
