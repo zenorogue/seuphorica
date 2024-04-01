@@ -186,6 +186,9 @@ string short_desc(const tile& t) {
   string out = s.caption;
   if(t.rarity == 2) out = "Rare " + out;
   if(t.rarity == 3) out = "Epic " + out;
+  out += " ";
+  out += t.letter;
+  out += to_string(t.value);
   return out;
   }
 
