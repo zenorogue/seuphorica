@@ -181,6 +181,16 @@ string tile_desc(const tile& t) {
   return out;
   }
 
+bool has_power(const tile& t, sp which, int& val) {
+  auto& s = gsp(t);
+  if(t.special == which) { val = s.value * t.rarity; return true; }
+  return false;
+  }
+
+bool has_power(const tile& t, sp which) {
+  int dummy; return has_power(t, which, dummy);
+  }
+
 void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
   auto& s = gsp(t);
   unsigned lines = 0xFF000000;
@@ -202,7 +212,7 @@ void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
   int l9 = lsize*9/10;
   int l7 = lsize*7/10;
 
-  if(t.special == sp::bending) {
+  if(has_power(t, sp::bending)) {
     style bmirror(0xFFC0C0FF, 0, 5);
     path pa1(bmirror);
     pa1.add(vec(x, y));
@@ -211,7 +221,7 @@ void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
     p += pa1;
     }
 
-  if(t.special == sp::portal) {
+  if(has_power(t, sp::portal)) {
     style bmirror(0xFFFF8000, 0, 5);
     path pa1(bmirror);
     pa1.add(vec(x, y));
@@ -220,7 +230,7 @@ void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
     p += pa1;
     }
 
-  if(t.special == sp::horizontal) {
+  if(has_power(t, sp::horizontal)) {
     style bhori(0xFFFFFFFF, 0, 5);
     for(int a: {l1, l9}) {
       path pa1(bhori);
@@ -231,7 +241,7 @@ void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
       }
     }
 
-  if(t.special == sp::vertical) {
+  if(has_power(t, sp::vertical)) {
     style bhori(0xFFFFFFFF, 0, 5);
     for(int a: {l1, l9}) {
       path pa1(bhori);
@@ -242,7 +252,7 @@ void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
       }
     }
 
-  if(t.special == sp::initial) {
+  if(has_power(t, sp::initial)) {
     style bhori(0xFF000000, 0, 3);
     path pa1(bhori);
     pa1.add(vec(x+l1, y+l9));
@@ -252,7 +262,7 @@ void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
     p += pa1;
     }
 
-  if(t.special == sp::final) {
+  if(has_power(t, sp::final)) {
     style bhori(0xFF000000, 0, 3);
     path pa1(bhori);
     pa1.add(vec(x+l9, y+l1));
@@ -316,20 +326,22 @@ void compute_score() {
   for(auto p: just_placed) {
     for(coord dir: { coord(1,0), coord(0,1) }) {
       coord prev = -dir;
-      if(board.at(p).special == sp::bending) prev = prev.mirror();
+      auto &t = board.at(p);
+      if(has_power(t, sp::bending)) prev = prev.mirror();
       auto p1 = p;
-      if(board.at(p).special == sp::portal) p = portals.at(p);
+      if(has_power(t, sp::portal)) p = portals.at(p);
       bool seen_tricky = false;
       if(board.count(p1+dir) || board.count(p+prev)) {
         int steps = 0;
         auto at = p;
         while(board.count(at + prev)) {
           steps++; if(steps >= 10000) { ev.current_scoring = "Cannot create infinite words"; ev.valid_move = false; return; }
-          if(board.at(at).special == sp::tricky) seen_tricky = true;
+          auto &ta = board.at(at);
+          if(has_power(ta, sp::tricky)) seen_tricky = true;
           if(seen_tricky) starts.emplace(at, -prev);
           at = at + prev;
-          if(board.at(at).special == sp::bending) prev = prev.mirror();
-          if(board.at(at).special == sp::portal) at = portals.at(at);
+          if(has_power(ta, sp::bending)) prev = prev.mirror();
+          if(has_power(ta, sp::portal)) at = portals.at(at);
           }
         starts.emplace(at, -prev);
         }
@@ -345,7 +357,7 @@ void compute_score() {
   bool is_crossing = false;
 
   bool fly_away = false;
-  for(auto p: just_placed) if(board.at(p).special == sp::flying) {
+  for(auto p: just_placed) if(has_power(board.at(p), sp::flying)) {
     fly_away = true;
     for(auto v: {coord(1,0), coord(-1,0), coord(0,1), coord(0,-1)}) if(board.count(p+v)) fly_away = false;
     if(fly_away) break;
@@ -357,7 +369,7 @@ void compute_score() {
     int placed = 0, all = 0, mul = 1;
     string word;
     set<coord> needed;
-    for(auto p: just_placed) if(board.at(p).special != sp::flying) needed.insert(p);
+    for(auto p: just_placed) if(!has_power(board.at(p), sp::flying)) needed.insert(p);
     int index = 0;
     bool has_tricky = false;
     bool has_reverse = false;
@@ -382,23 +394,23 @@ void compute_score() {
         if(!b) { if(ways & 1) sooth++; if(ways & 2) rsooth++; }
         };
 
-      if(b.special == sp::tricky) has_tricky = true;
-      if(b.special == sp::soothing) qsooth = max(qsooth, val);
-      if(b.special == sp::reversing) has_reverse = true;
-      if(b.special == sp::bending) next = next.mirror();
-      if(b.special == sp::portal) { at = portals.at(at); ev.used_tiles.insert(at); needed.erase(at); }
-      if(b.special == sp::premium) affect_mul(true);
-      if(b.special == sp::horizontal) affect_mul(next.x);
-      if(b.special == sp::vertical) affect_mul(next.y);
-      if(b.special == sp::red) affect_mul(get_color(at) == 1);
-      if(b.special == sp::blue) affect_mul(get_color(at) == 2);
-      if(b.special == sp::initial) { affect_mul(index == 0, 1); }
-      if(b.special == sp::final) { affect_mul(index == 0, 2); }
-      if(b.special == sp::bending)
+      if(has_power(b, sp::tricky, val)) has_tricky = true;
+      if(has_power(b, sp::soothing, val)) qsooth = max(qsooth, val);
+      if(has_power(b, sp::reversing, val)) has_reverse = true;
+      if(has_power(b, sp::bending, val)) next = next.mirror();
+      if(has_power(b, sp::portal, val)) { at = portals.at(at); ev.used_tiles.insert(at); needed.erase(at); }
+      if(has_power(b, sp::premium, val)) affect_mul(true);
+      if(has_power(b, sp::horizontal, val)) affect_mul(next.x);
+      if(has_power(b, sp::vertical, val)) affect_mul(next.y);
+      if(has_power(b, sp::red, val)) affect_mul(get_color(at) == 1);
+      if(has_power(b, sp::blue, val)) affect_mul(get_color(at) == 2);
+      if(has_power(b, sp::initial, val)) { affect_mul(index == 0, 1); }
+      if(has_power(b, sp::final, val)) { affect_mul(index == 0, 2); }
+      if(has_power(b, sp::bending, val))
         affect_mul(board.count(at-coord(1,0)) && board.count(at+coord(1,0)) && board.count(at-coord(0,1)) && board.count(at+coord(0,1)));
       at = at + next;
-      if(b.special == sp::final) affect_mul(!board.count(at), 1);
-      if(b.special == sp::initial) affect_mul(!board.count(at), 2);
+      if(has_power(b, sp::final, val)) affect_mul(!board.count(at), 1);
+      if(has_power(b, sp::initial, val)) affect_mul(!board.count(at), 2);
       index++;
       if(has_tricky && ok(word) && board.count(at) && !old_tricks.count(allword)) {
         int mul1 = mul + qsooth * sooth;
@@ -520,7 +532,7 @@ void draw_board() {
     // int pos = sts.find("svg");
     // sts.insert(pos+4, "draggable=\"true\" ondragstart=\"drag(event)\" onclick=\"alert('clicked!')\" ");
     ss << sts + " " + tile_desc(t);
-    if(t.special == sp::wild) {
+    if(has_power(t, sp::tricky)) {
       for(char ch='A'; ch <= 'Z'; ch++)
         ss << " <a onclick='wild_become(" << id-1 << ", \"" << ch << "\")'>" << ch << "</a>";
       }
@@ -741,7 +753,7 @@ void build_shop(int qty = 6) {
 bool under_radiation(coord c) {
   for(int x: {-1,0,1}) for(int y: {-1,0,1}) {
     auto c1 = c + coord(x, y);
-    if(board.count(c1) && board.at(c1).special == sp::radiating)
+    if(board.count(c1) && has_power(board.at(c1), sp::radiating))
       return true;
     }
   return false;
@@ -760,21 +772,24 @@ void accept_move() {
     auto& b = board.at(p);
     auto& sp = gsp(b);
     int val = sp.value * b.rarity;
-    if(b.special == sp::rich) qshop += val;
-    if(b.special == sp::drawing) qdraw += val;
-    if(b.special == sp::teacher) teach += val;
-    if(b.special == sp::trasher) copies_unused--;
-    if(b.special == sp::duplicator) copies_used += val;
-    if(b.special == sp::retain) retain += val;
+    if(has_power(b, sp::rich, val)) qshop += val;
+    if(has_power(b, sp::drawing, val)) qdraw += val;
+    if(has_power(b, sp::teacher, val)) teach += val;
+    if(has_power(b, sp::trasher, val)) copies_unused--;
+    if(has_power(b, sp::duplicator, val)) copies_used += val;
+    if(has_power(b, sp::retain, val)) retain += val;
     }
 
   for(auto& p: just_placed) {
     auto& b = board.at(p);
     b.price = 0;
-    if(b.special != sp::trasher && b.special != sp::duplicator)
+    bool selftrash = has_power(b, sp::trasher) || has_power(b, sp::duplicator);
+    if(!selftrash)
       for(int i=0; i<copies_used; i++) discard.push_back(b);
-    auto& sp = gsp(b);
-    if(b.special != sp::bending && b.special != sp::portal && b.special != sp::reversing && !under_radiation(p))
+    bool keep = false;
+    for(sp x: {sp::bending, sp::portal, sp::reversing}) if(has_power(b, x)) keep = true;
+    if(!keep) keep = under_radiation(p);
+    if(!keep)
       b.special = sp::placed;
     }
   for(auto& p: drawn) p.price = 0;
@@ -838,7 +853,7 @@ extern "C" {
       }
     if(drawn.size()) {
        board.emplace(c, std::move(drawn[0])); just_placed.insert(c); drawn.erase(drawn.begin());
-       if(board.at(c).special == sp::portal) { placing_portal = true; portal_from = c; }
+       if(has_power(board.at(c), sp::portal)) { placing_portal = true; portal_from = c; }
        draw_board();
        }
     }
@@ -878,7 +893,7 @@ extern "C" {
   void back_to_game() { draw_board(); }
 
   void wild_become(int id, const char *s) {
-    if(drawn.size() > id && drawn[id].special == sp::wild) drawn[id].letter = s[0]; draw_board();
+    if(drawn.size() > id && has_power(drawn[id], sp::wild)) drawn[id].letter = s[0]; draw_board();
     }
 
   void play() {
