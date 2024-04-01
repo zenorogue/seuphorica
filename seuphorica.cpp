@@ -356,12 +356,12 @@ void compute_score() {
       if(b.special == sp::initial) affect_mul(!board.count(at), 2);
       index++;
       if(has_tricky && ok(word) && board.count(at) && !old_tricks.count(allword)) {
-        scoring << "<b>" << word << ":</b> " << placed << "*" << all << "*" << mul << " = " << placed*all*mul;
+        scoring << "<b>" << word << ":</b> " << placed << "*" << all << "*" << mul << " = " << placed*all*mul << "<br/>";
         ev.total_score += placed * all * mul;
         ev.new_tricks.insert(allword);
         }
       if(has_tricky && has_reverse && ok(revword(word)) && board.count(at) && !old_tricks.count(allword)) {
-        scoring << "<b>" << revword(word) << ":</b> " << placed << "*" << all << "*" << rmul << " = " << placed*all*rmul;
+        scoring << "<b>" << revword(word) << ":</b> " << placed << "*" << all << "*" << rmul << " = " << placed*all*rmul << "<br/>";
         ev.total_score += placed * all * rmul;
         ev.new_tricks.insert(allword);
         }
@@ -380,7 +380,7 @@ void compute_score() {
 
     if(is_legal && has_reverse && ok(revword(word))) {
       swap(mul, rmul); word = revword(word);
-      scoring << "<b>" << word << ":</b> " << placed << "*" << all << "*" << mul << " = " << placed*all*mul;
+      scoring << "<b>" << word << ":</b> " << placed << "*" << all << "*" << mul << " = " << placed*all*mul << "<br/>";
       ev.total_score += placed * all * mul;
       }
     }
