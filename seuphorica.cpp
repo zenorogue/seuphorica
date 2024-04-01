@@ -321,6 +321,7 @@ void compute_score() {
     int index = 0;
     bool has_tricky = false;
     bool has_reverse = false;
+    bool optional = board.count(at-next);
     vector<coord> allword;
     int rmul = 1;
 
@@ -370,6 +371,7 @@ void compute_score() {
     if(!is_legal && has_reverse && ok(revword(word))) {
       has_reverse = false; is_legal = true; swap(mul, rmul); word = revword(word);
       }
+    if(!is_legal && optional) continue;
     scoring << "<b>" << word << ":</b> " << placed << "*" << all << "*" << mul << " = " << placed*all*mul;
     if(!is_legal) { scoring << " <font color='#FF4040'>(illegal word!)</font>"; illegal_words = true; }
     scoring << "<br/>";
