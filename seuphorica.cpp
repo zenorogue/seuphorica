@@ -217,7 +217,7 @@ bool has_power(const tile& t, sp which, int& val) {
   if(t.special == which) { val = s.value * t.rarity; return true; }
   if(t.special >= sp::first_artifact) {
     const auto& artifact = artifacts[t.special];
-    for(auto w: artifact) if(w == which) { val = s.value; return true; }
+    for(auto w: artifact) if(w == which) { val = gsp(w).value; return true; }
     }
   return false;
   }
