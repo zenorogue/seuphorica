@@ -66,7 +66,8 @@ vector<special> specials = {
 
   /* unused-tile effects */
   {"Teacher", "if used, %+d value to all the unused tiles", 1, 0xFFFF40FF, 0xFF000000},
-  {"Trasher", "all discarded unused tiles, as well as this, are premanently deleted", 0, 0xFF000000, 0xFFFFFFFF},
+  {"Trasher", "all discarded unused tiles, as well as this, are premanently deleted", 0, 0xFF000000, 0xFF808080},
+  {"Trasher+", "all discarded unused tiles are premanently deleted", 0, 0xFF000000, 0xFFFFFFFF},
   {"Duplicator", "%+d copies of all used tiles (but this one is deleted)", 1, 0xFFFF40FF, 0xFF00C000},
   {"Retain", "%d first unused tiles are retained for the next turn", 4, 0xFF905000, 0xFFFFFFFF},
 
@@ -87,7 +88,7 @@ enum class sp {
 
   premium, horizontal, vertical, initial, final, red, blue, 
   flying, bending, reversing,
-  teacher, trasher, duplicator, retain, 
+  teacher, trasher, multitrasher, duplicator, retain,
   drawing, rich,
   radiating, tricky, soothing, wild, portal, first_artifact
   };
@@ -856,6 +857,7 @@ void accept_move() {
     if(has_power(b, sp::drawing, val)) qdraw += val;
     if(has_power(b, sp::teacher, val)) teach += val;
     if(has_power(b, sp::trasher, val)) copies_unused--;
+    if(has_power(b, sp::multitrasher, val)) copies_unused--;
     if(has_power(b, sp::duplicator, val)) copies_used += val;
     if(has_power(b, sp::retain, val)) retain += val;
     }
