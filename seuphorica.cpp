@@ -797,7 +797,7 @@ extern "C" {
   void back_to_game() { draw_board(); }
 
   void wild_become(int id, const char *s) {
-    if(drawn.size() > id && drawn[id].special == sp::wild) drawn[id].letter = s[0];
+    if(drawn.size() > id && drawn[id].special == sp::wild) drawn[id].letter = s[0]; draw_board();
     }
 
   void play() {
