@@ -40,6 +40,10 @@ bool ok(const string& word) {
   return dictionary[word.size()].count(word);
   }
 
+string revword(string word) {
+  reverse(word.begin(), word.end()); return word;
+  }
+
 vector<special> specials = {
   {"No Tile", "", 0, 0xFF000000, 0xFF000000}, 
   {"Placed", "", 0, 0xFFFFFFFF, 0xFF000000},   
@@ -58,6 +62,7 @@ vector<special> specials = {
   /* placement */
   {"Flying", "exempt from the rule that all tiles must be in a single word", 0, 0xFF8080FF, 0xFFFFFFFF},
   {"Mirror", "words going across go down after this letter, and vice versa; %+d multiplier when tiles on all 4 adjacent cells", 3, 0xFF303030, 0xFF4040FF},
+  {"Reversing", "words going across go down after this letter, and vice versa; %+d multiplier when tiles on all 4 adjacent cells", 3, 0xFF404000, 0xFFFFFF80},
 
   /* unused-tile effects */
   {"Teacher", "if used, %+d value to all the unused tiles", 1, 0xFFFF40FF, 0xFF000000},
@@ -78,7 +83,7 @@ enum class sp {
   notile, placed, standard,
 
   premium, horizontal, vertical, initial, final, red, blue, 
-  flying, bending, 
+  flying, bending, reversing,
   teacher, trasher, duplicator, retain, 
   drawing, rich,
   radiating, tricky };
@@ -315,7 +320,9 @@ void compute_score() {
     for(auto p: just_placed) if(board.at(p).special != sp::flying) needed.insert(p);
     int index = 0;
     bool has_tricky = false;
+    bool has_reverse = false;
     vector<coord> allword;
+    int rmul = 1;
 
     while(board.count(at)) {
       needed.erase(at);
@@ -326,31 +333,54 @@ void compute_score() {
       if(just_placed.count(at)) placed += b.value;
       all += b.value;
       int val = gsp(b).value * b.rarity;
+
+      auto affect_mul = [&] (bool b, bool ways = 3) {
+        if(b) { if(ways & 1) mul += val; if(ways & 2) rmul += val; }
+        };
+
       if(b.special == sp::tricky) has_tricky = true;
+      if(b.special == sp::reversing) has_reverse = true;
       if(b.special == sp::bending) next = next.mirror();
-      if(b.special == sp::premium) mul += val;
-      if(b.special == sp::horizontal && next.x) mul += val;
-      if(b.special == sp::vertical && next.y) mul += val;
-      if(b.special == sp::red && get_color(at) == 1) mul += val;
-      if(b.special == sp::blue && get_color(at) == 2) mul += val;
-      if(b.special == sp::initial && index == 0) mul += val;
-      if(b.special == sp::bending && board.count(at-coord(1,0)) && board.count(at+coord(1,0)) && board.count(at-coord(0,1)) && board.count(at+coord(0,1))) mul += val;
+      if(b.special == sp::premium) affect_mul(true);
+      if(b.special == sp::horizontal) affect_mul(next.x);
+      if(b.special == sp::vertical) affect_mul(next.y);
+      if(b.special == sp::red) affect_mul(get_color(at) == 1);
+      if(b.special == sp::blue) affect_mul(get_color(at) == 2);
+      if(b.special == sp::initial) { affect_mul(index == 0, 1); }
+      if(b.special == sp::final) { affect_mul(index == 0, 2); }
+      if(b.special == sp::bending)
+        affect_mul(board.count(at-coord(1,0)) && board.count(at+coord(1,0)) && board.count(at-coord(0,1)) && board.count(at+coord(0,1)));
       at = at + next;
-      if(b.special == sp::final && !board.count(at)) mul += val;
+      if(b.special == sp::final) affect_mul(!board.count(at), 1);
+      if(b.special == sp::initial) affect_mul(!board.count(at), 2);
       index++;
       if(has_tricky && ok(word) && board.count(at) && !old_tricks.count(allword)) {
         scoring << "<b>" << word << ":</b> " << placed << "*" << all << "*" << mul << " = " << placed*all*mul;
         ev.total_score += placed * all * mul;
         ev.new_tricks.insert(allword);
         }
+      if(has_tricky && has_reverse && ok(revword(word)) && board.count(at) && !old_tricks.count(allword)) {
+        scoring << "<b>" << revword(word) << ":</b> " << placed << "*" << all << "*" << rmul << " = " << placed*all*rmul;
+        ev.total_score += placed * all * rmul;
+        ev.new_tricks.insert(allword);
+        }
       }
     if(needed.empty()) ev.valid_move = true;
     bool is_legal = ok(word);
+    if(!is_legal && has_reverse && ok(revword(word))) {
+      has_reverse = false; is_legal = true; swap(mul, rmul); word = revword(word);
+      }
     scoring << "<b>" << word << ":</b> " << placed << "*" << all << "*" << mul << " = " << placed*all*mul;
     if(!is_legal) { scoring << " <font color='#FF4040'>(illegal word!)</font>"; illegal_words = true; }
     scoring << "<br/>";
     if(placed != all) is_crossing = true;
     ev.total_score += placed * all * mul;
+
+    if(is_legal && has_reverse && ok(revword(word))) {
+      swap(mul, rmul); word = revword(word);
+      scoring << "<b>" << word << ":</b> " << placed << "*" << all << "*" << mul << " = " << placed*all*mul;
+      ev.total_score += placed * all * mul;
+      }
     }
 
   if(just_placed.empty()) {}  
@@ -671,7 +701,7 @@ void accept_move() {
     if(b.special != sp::trasher && b.special != sp::duplicator)
       for(int i=0; i<copies_used; i++) discard.push_back(b);
     auto& sp = gsp(b);
-    if(b.special != sp::bending && !under_radiation(p))
+    if(b.special != sp::bending && b.special != sp::reversing && !under_radiation(p))
       b.special = sp::placed;
     }
   for(auto& p: drawn) p.price = 0;
