@@ -783,9 +783,10 @@ void accept_move() {
   for(auto& p: just_placed) {
     auto& b = board.at(p);
     b.price = 0;
-    bool selftrash = has_power(b, sp::trasher) || has_power(b, sp::duplicator);
-    if(!selftrash)
-      for(int i=0; i<copies_used; i++) discard.push_back(b);
+    int selftrash = 0;
+    if(has_power(b, sp::trasher)) selftrash = 1;
+    if(has_power(b, sp::duplicator, selftrash)) selftrash++;
+    for(int i=selftrash; i<copies_used; i++) discard.push_back(b);
     bool keep = false;
     for(sp x: {sp::bending, sp::portal, sp::reversing}) if(has_power(b, x)) keep = true;
     if(!keep) keep = under_radiation(p);
