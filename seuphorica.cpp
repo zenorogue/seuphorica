@@ -195,7 +195,9 @@ string tile_desc(const tile& t) {
   cap += " ";
   cap += char(t.letter);
   cap += to_string(t.value);
-  if(t.rarity == 1)
+  if(t.special >= sp::first_artifact)
+    out = "<b><font color='#FFD500'>" + cap + ": </font></b>";
+  else if(t.rarity == 1)
     out = "<b>" + cap + ": </b>";
   else if(t.rarity == 2)
     out = "<b><font color='#4040FF'>Rare " + cap + ": </font></b>";
