@@ -145,14 +145,26 @@ vector<tile> shop;
 
 tile empty_tile(0, sp::notile);
 
-special &gsp(tile &t) {
-  return specials[int(t.special)];
+special &gsp(sp x) {
+  return specials[int(x)];
   }
 
-string tile_desc(tile& t) {
+special &gsp(const tile &t) {
+  return gsp(t.special);
+  }
+
+string power_description(const special& s, int rarity) {
   char buf[127];
+  sprintf(buf, s.desc.c_str(), s.value * rarity);
+  return buf;
+  }
+
+string power_description(const tile &t) {
+  return power_description(gsp(t), t.rarity);
+  }
+
+string tile_desc(const tile& t) {
   auto& s = gsp(t);
-  sprintf(buf, s.desc.c_str(), s.value * t.rarity);
   string out;
   string cap = s.caption;
   cap += " ";
@@ -164,7 +176,7 @@ string tile_desc(tile& t) {
     out = "<b><font color='#4040FF'>Rare " + cap + ": </font></b>";
   else if(t.rarity == 3)
     out = "<b><font color='#FF40FF'>Epic " + cap + ": </font></b>";
-  out += buf;
+  out += power_description(t);
   if(t.price) out += " (" + to_string(t.price) + " 🪙)";
   return out;
   }
