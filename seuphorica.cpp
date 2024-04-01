@@ -53,7 +53,7 @@ vector<special> specials = {
 
   /* placement */
   {"Flying", "exempt from the rule that all tiles must be in a single word", 0, 0xFF8080FF, 0xFFFFFFFF},
-  {"Mirror", "words going across go down after this letter, and vice versa", 0, 0xFF303030, 0xFF4040FF},
+  {"Mirror", "words going across go down after this letter, and vice versa; %+d multiplier when tiles on all 4 adjacent cells", 3, 0xFF303030, 0xFF4040FF},
 
   /* unused-tile effects */
   {"Teacher", "if used, %+d value to all the unused tiles", 1, 0xFFFF40FF, 0xFF000000},
@@ -328,6 +328,7 @@ void compute_score() {
       if(b.special == sp::red && get_color(at) == 1) mul += val;
       if(b.special == sp::blue && get_color(at) == 2) mul += val;
       if(b.special == sp::initial && index == 0) mul += val;
+      if(b.special == sp::bending && board.count(at-coord(1,0)) && board.count(at+coord(1,0)) && board.count(at-coord(0,1)) && board.count(at+coord(0,1))) mul += val;
       at = at + next;
       if(b.special == sp::final && !board.count(at)) mul += val;
       index++;
@@ -517,7 +518,7 @@ void view_help() {
   ss << "<li>sum of the values of all tiles in the word</li>";
   ss << "<li>the multiplier (1 by default)</li></ul></li>";
   ss << "<li>after each move: <ul>";
-  ss << "<li>standard copies of the tiles are placed permanently on the board</li>";
+  ss << "<li>standard copies of the tiles are placed permanently on the board (only geometry-altering powers are kept)</li>";
   ss << "<li>tiles you have used are discarded</li>";
   ss << "<li>tiles you have not used have their value increased, and are discarded</li>";
   ss << "<li>you draw 8 new tiles from the bag (if bag is empty, discarded tiles go back to the bag), and the shop has a new selection of 5 items</li>";
