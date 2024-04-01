@@ -938,7 +938,9 @@ extern "C" {
     if(placing_portal) {
       auto t = board.at(portal_from);
       int d = dist(portal_from, c);
-      if(d > t.rarity * gsp(t).value) { placing_portal = false; back_from_board(portal_from.x, portal_from.y); return; }
+      int val;
+      has_power(t, sp::portal, val);
+      if(d > val) { placing_portal = false; back_from_board(portal_from.x, portal_from.y); return; }
       board.emplace(c, t);
       portals.emplace(c, portal_from);
       portals.emplace(portal_from, c);
