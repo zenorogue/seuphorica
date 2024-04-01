@@ -332,7 +332,7 @@ int total_gain = 0;
 
 int taxf(int r) {
   double rd = r;
-  return (4 + rd) * (9 + rd) * (9 + rd) * (19 + rd) * (39 + rd) / 80000;
+  return (4 + rd) * (9 + rd) * (9 + rd) * (39 + rd) * (79 + rd) / 320000;
   }
 
 int tax() { return taxf(roundindex); }
