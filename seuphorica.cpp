@@ -365,7 +365,7 @@ void compute_score() {
       all += b.value;
       int val = gsp(b).value * b.rarity;
 
-      auto affect_mul = [&] (bool b, bool ways = 3) {
+      auto affect_mul = [&] (bool b, int ways = 3) {
         if(b) { if(ways & 1) mul += val; if(ways & 2) rmul += val; }
         if(!b) { if(ways & 1) sooth++; if(ways & 2) rsooth++; }
         };
