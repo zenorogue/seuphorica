@@ -14,6 +14,8 @@ V4: portal tiles, wild tiles, soothing tiles
 
 V5: randart tiles, multi-trashers, game logging
 
+V6: fixed both ends of portal being added to discard
+
 Plans: better dictionary, better balance
 
 Click [this](https://zenorogue.github.io/seuphorica/) to play!
