@@ -783,6 +783,12 @@ extern "C" {
     if(ev.valid_move) accept_move();
     }
 
+  void cheat() {
+    for(auto t: discard) drawn.push_back(t);
+    for(auto t: deck) drawn.push_back(t);
+    discard.clear(); deck.clear(); draw_board();
+    }
+
   void update_dict(const char* s) { update_dictionary(s); }
   }
                                   
