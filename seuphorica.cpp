@@ -378,8 +378,9 @@ void compute_score() {
           if(has_power(ta, sp::tricky)) seen_tricky = true;
           if(seen_tricky) starts.emplace(at, -prev);
           at = at + prev;
-          if(has_power(ta, sp::bending)) prev = prev.mirror();
-          if(has_power(ta, sp::portal)) at = portals.at(at);
+          auto &ta1 = board.at(at);
+          if(has_power(ta1, sp::bending)) prev = prev.mirror();
+          if(has_power(ta1, sp::portal)) at = portals.at(at);
           }
         starts.emplace(at, -prev);
         }
