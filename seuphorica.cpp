@@ -58,7 +58,7 @@ vector<special> specials = {
   /* unused-tile effects */
   {"Teacher", "if used, %+d value to all the drawn but unused tiles", 1, 0xFFFF40FF, 0xFF000000},
   {"Trasher", "all unused tiles, as well as this, are premanently deleted", 0, 0xFF000000, 0xFFFFFFFF},
-  {"Duplicator", "%+d copies of all used tiles (but this one is deleted)", 0, 0xFFFF40FF, 0xFF00C000},
+  {"Duplicator", "%+d copies of all used tiles (but this one is deleted)", 1, 0xFFFF40FF, 0xFF00C000},
   {"Retain", "all unused tiles are retained for the next turn", 0, 0xFF905000, 0xFFFFFFFF},
 
   /* next-turn effects */
