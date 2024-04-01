@@ -870,13 +870,14 @@ void accept_move() {
 
   for(auto& p: just_placed) {
     auto& b = board.at(p);
-    if(b.price) add_to_log("bought: "+short_desc(b)+ " for " + to_string(b.price));
+    bool other_end = has_power(b, sp::portal) && p < portals.at(p);
+    if(b.price && !other_end) add_to_log("bought: "+short_desc(b)+ " for " + to_string(b.price));
     add_to_log("on (" + to_string(p.x) + "," + to_string(p.y) + "): " + short_desc(board.at(p)));
     b.price = 0;
     int selftrash = 0;
     if(has_power(b, sp::trasher)) selftrash = 1;
     if(has_power(b, sp::duplicator, selftrash)) selftrash++;
-    for(int i=selftrash; i<copies_used; i++) discard.push_back(b);
+    if(!other_end) for(int i=selftrash; i<copies_used; i++) discard.push_back(b);
     bool keep = false;
     for(sp x: {sp::bending, sp::portal, sp::reversing}) if(has_power(b, x)) keep = true;
     if(!keep) keep = under_radiation(p);
