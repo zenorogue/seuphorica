@@ -12,7 +12,9 @@ V3: tricky tiles, reversing tiles, nerfed retainers, fixed missing graphics for 
 
 V4: portal tiles, wild tiles, soothing tiles
 
-Plans: randart tiles, better dictionary, better balance
+V5: randart tiles, multi-trashers, game logging
+
+Plans: better dictionary, better balance
 
 Click [this](https://zenorogue.github.io/seuphorica/) to play!
 
