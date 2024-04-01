@@ -67,13 +67,7 @@ vector<special> specials = {
 
   /* other */
   {"Radiating", "8 adjacent tiles keep their special properties", 0, 0xFF004000, 0xFF80FF80},
-
-/*
-  {"Swapper", "if the two adjacent tiles have been placed this turn, permanently swaps their values and powers", 0, 0xFF000000, 0xFFFFFF80},
-  {"Friendly", "double score when crossing on it", 2, 0xFF4040FF, 0xFFFFFF00},
-  {"Tricky", "all valid subwords including this letter are taken into account for scoring", 0, 0xFF40C0C0, 0xFF000000},
-  {"Extending", "%+d multiplier whenever extending this word", 0, 0xFF80FF80, 0xFF000000},
-*/
+  {"Tricky", "all valid subwords including this letter are taken into account for scoring (each counting just once)", 0, 0xFF808040, 0xFFFFFF80},
   };
 
 enum class sp {
@@ -83,8 +77,7 @@ enum class sp {
   flying, bending, 
   teacher, trasher, duplicator, retain, 
   drawing, rich,
-  radiating,
-  swapper, friendly, tricky, extending, };
+  radiating, tricky };
 
 struct tile {
   int id;
@@ -114,6 +107,8 @@ set<coord> just_placed;
 map<coord, tile> board;
 
 map<coord, int> colors;
+
+set<vector<coord>> old_tricks;
 
 int get_color(coord c) {
   if(!colors.count(c)) { 
@@ -268,6 +263,7 @@ struct eval {
   string current_scoring;
   bool valid_move;
   set<coord> used_tiles;
+  set<vector<coord>> new_tricks;
   };
 
 eval ev;
@@ -282,6 +278,7 @@ void compute_score() {
       if(board.count(p+dir) || board.count(p+prev)) {
         auto at = p;
         while(board.count(at + prev)) {
+          if(board.at(p).special == sp::tricky) starts.emplace(at, -prev);
           at = at + prev;
           if(board.at(at).special == sp::bending) prev = prev.mirror();
           }
@@ -313,14 +310,19 @@ void compute_score() {
     set<coord> needed;
     for(auto p: just_placed) if(board.at(p).special != sp::flying) needed.insert(p);
     int index = 0;
+    bool has_tricky = false;
+    vector<coord> allword;
+
     while(board.count(at)) {
       needed.erase(at);
       ev.used_tiles.insert(at);
       auto& b = board.at(at);
       word += b.letter;
+      allword.push_back(at);
       if(just_placed.count(at)) placed += b.value;
       all += b.value;
       int val = gsp(b).value * b.rarity;
+      if(b.special == sp::tricky) has_tricky = true;
       if(b.special == sp::bending) next = next.mirror();
       if(b.special == sp::premium) mul += val;
       if(b.special == sp::horizontal && next.x) mul += val;
@@ -332,6 +334,11 @@ void compute_score() {
       at = at + next;
       if(b.special == sp::final && !board.count(at)) mul += val;
       index++;
+      if(has_tricky && dictionary[word.size()].count(word) && board.count(at) && !old_tricks.count(allword)) {
+        scoring << "<b>" << word << ":</b> " << placed << "*" << all << "*" << mul << " = " << placed*all*mul;
+        ev.total_score += placed * all * mul;
+        ev.new_tricks.insert(allword);
+        }
       }
     if(needed.empty()) ev.valid_move = true;
     bool is_legal = dictionary[word.size()].count(word);
@@ -639,6 +646,8 @@ void accept_move() {
   roundindex++;
   int qdraw = 8, qshop = 6, teach = 1, copies_unused = 1, copies_used = 1;
   int retain = 0;
+
+  for(auto& w: ev.new_tricks) old_tricks.insert(w);
 
   for(auto& p: ev.used_tiles) {
     auto& b = board.at(p);
