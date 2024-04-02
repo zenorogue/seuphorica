@@ -261,8 +261,8 @@ void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
   if(has_power(t, sp::portal)) {
     style bmirror(0xFFFF8000, 0, 5);
     path pa1(bmirror);
-    pa1.add(vec(x, y));
-    pa1.add(vec(x+l9, y+l9));
+    pa1.add(vec(x+l1, y+l9));
+    pa1.add(vec(x+l9, y+l1));
     pa1.onclick = onc;
     p += pa1;
     }
@@ -540,12 +540,12 @@ void draw_board() {
     style borange(0x80FF8000, 0, 3);
     style bblue(0x800000FF, 0, 3);
     path pa1(borange);
-    pa1.add(vec(x*lsize + l1, y*lsize+l1));
-    pa1.add(vec(c1.x*lsize + l1, c1.y*lsize+l1));
+    pa1.add(vec(x*lsize + l1, y*lsize+l9));
+    pa1.add(vec(c1.x*lsize + l1, c1.y*lsize+l9));
     p += pa1;
     path pa2(bblue);
-    pa2.add(vec(x*lsize + l9, y*lsize+l9));
-    pa2.add(vec(c1.x*lsize + l9, c1.y*lsize+l9));
+    pa2.add(vec(x*lsize + l9, y*lsize+l1));
+    pa2.add(vec(c1.x*lsize + l9, c1.y*lsize+l1));
     p += pa2;
     }
 
