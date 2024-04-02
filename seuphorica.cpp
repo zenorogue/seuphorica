@@ -485,7 +485,7 @@ void compute_score() {
       }
     }
 
-  if(just_placed.empty()) {}  
+  if(just_placed.empty()) { scoring << "You can skip your move, but you still need to pay the tax of " << tax() << " 🪙."; }
   else if(illegal_words) { scoring << "Includes words not in the dictionary!"; ev.valid_move = false; }
   else if(fly_away) { scoring << "Single flying letters cannot just fly away!"; ev.valid_move = false; }
   else if(!is_crossing) { scoring << "Must cross the existing letters!"; ev.valid_move = false; }
