@@ -975,6 +975,7 @@ extern "C" {
     coord c(x, y);
     if(!just_placed.count(c)) return;
     if(!board.count(c)) return;
+    if(has_power(board.at(c), sp::portal) && !portals.count(c)) placing_portal = false;
     drawn.insert(drawn.begin(), board.at(c));
     board.erase(c); just_placed.erase(c);
     if(portals.count(c)) { auto c1 = portals.at(c); portals.erase(c); portals.erase(c1); board.erase(c1); just_placed.erase(c1); }
