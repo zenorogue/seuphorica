@@ -884,7 +884,10 @@ void accept_move() {
     if(!keep)
       b.special = sp::placed;
     }
-  for(auto& p: drawn) p.price = 0;
+  for(auto& p: drawn) {
+     if(p.price) add_to_log("bought: "+short_desc(p)+ " for " + to_string(p.price) + power_description(p));
+     p.price = 0;
+     }
   vector<tile> retained;
   for(auto& p: drawn) {
     if(retain) {
