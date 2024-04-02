@@ -871,7 +871,7 @@ void accept_move() {
   for(auto& p: just_placed) {
     auto& b = board.at(p);
     bool other_end = has_power(b, sp::portal) && p < portals.at(p);
-    if(b.price && !other_end) add_to_log("bought: "+short_desc(b)+ " for " + to_string(b.price));
+    if(b.price && !other_end) add_to_log("bought: "+short_desc(b)+ " for " + to_string(b.price) + ": " + power_description(b));
     add_to_log("on (" + to_string(p.x) + "," + to_string(p.y) + "): " + short_desc(board.at(p)));
     b.price = 0;
     int selftrash = 0;
