@@ -16,6 +16,8 @@ V5: randart tiles, multi-trashers, game logging
 
 V6: fixed both ends of portal being added to discard
 
+V7: better portal graphics, fixed a crash when removing a portal by clicking it, fixed missing details in the game log
+
 Plans: better dictionary, better balance
 
 Click [this](https://zenorogue.github.io/seuphorica/) to play!
