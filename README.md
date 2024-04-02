@@ -16,7 +16,7 @@ V5: randart tiles, multi-trashers, game logging
 
 V6: fixed both ends of portal being added to discard
 
-V7: better portal graphics, fixed a crash when removing a portal by clicking it, fixed missing details in the game log
+V7: better portal graphics, fixed a crash when removing a portal by clicking it, fixed missing details in the game log, show tax when skipping move
 
 Plans: better dictionary, better balance
 
