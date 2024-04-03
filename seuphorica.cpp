@@ -503,8 +503,8 @@ void draw_board() {
   compute_score();
 
   int minx=15, miny=15, maxx=0, maxy=0;
-  for(auto& b: board) minx = min(minx, b.first.x), maxx = max(maxx, b.first.x), miny = min(miny, b.first.y), maxy = max(maxy, b.first.y);
-  miny -= 3; minx -= 3; maxx += 4; maxy += 4;
+  for(auto& b: board) if(!just_placed.count(b.first)) minx = min(minx, b.first.x), maxx = max(maxx, b.first.x), miny = min(miny, b.first.y), maxy = max(maxy, b.first.y);
+  miny -= 6; minx -= 6; maxx += 7; maxy += 7;
 
   for(int y=miny; y<maxy; y++)
   for(int x=minx; x<maxx; x++) {
@@ -704,6 +704,7 @@ void view_help() {
   ss << "<li>tiles bought from the shop can be used immediately or discarded for increased value</li>";
   ss << "<li>the topmost letter in the shop is always A, E, U, I, O</li>";
   ss << "<li>you start with a single standard copy of every letter in your bag; the shop sells letters with extra powers</li>";
+  ss << "<li>the board is infinite, but you can only see and use tiles in distance at most 6 from already placed tiles<ul>";
   ss << "</ul>";
 
   ss << "<br/><a onclick='back_to_game()'>back to game</a><br/>";
