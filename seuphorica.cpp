@@ -1020,6 +1020,7 @@ extern "C" {
     cash += 1000000;
     for(auto t: discard) drawn.push_back(t);
     for(auto t: deck) drawn.push_back(t);
+    build_shop(100);
     discard.clear(); deck.clear(); draw_board();
     }
 
