@@ -78,7 +78,7 @@ vector<special> specials = {
   /* other */
   {"Radiating", "8 adjacent tiles keep their special properties", 0, 0xFF004000, 0xFF80FF80},
   {"Tricky", "all valid subwords including this letter are taken into account for scoring (each counting just once)", 0, 0xFF808040, 0xFFFFFF80},
-  {"Soothing", "every failed multiplier tile becomes %+d multiplier (does not stack)", 1, 0xFFFF8080, 0xFF800000},
+  {"Soothing", "every failed multiplier tile becomes %+d multiplier (does not stack)", 1, 0xFF80FF80, 0xFF008000},
   {"Wild", "you can rewrite the letter while it is in your hand, but it resets the value to 0", 0, 0xFF800000, 0xFFFF8000},
   {"Portal", "placed in two locations; teleports between them (max distance %d)", 6, 0xFF000080, 0xFFFFFFFF},
   };
