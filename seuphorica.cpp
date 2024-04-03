@@ -790,6 +790,14 @@ sp basic_special() {
   return sp(q);
   }
 
+sp actual_basic_special() {
+  int q = 0;
+  while(q < 3) {
+    q = rand() % int(sp::first_artifact);
+    }
+  return sp(q);
+  }
+
 sp generate_artifact() {
   int next = int(specials.size());
   specials.emplace_back();
@@ -806,7 +814,7 @@ sp generate_artifact() {
   auto& art = artifacts[spec];
   while(true) {
     art.clear();
-    for(int i=0; i<3; i++) art.push_back(basic_special());
+    for(int i=0; i<3; i++) art.push_back(actual_basic_special());
     bool reps = false;
     for(int i=0; i<3; i++) for(int j=0; j<i; j++) if(art[i] == art[j]) reps = true;
     if(reps) continue;
