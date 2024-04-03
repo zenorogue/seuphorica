@@ -69,10 +69,10 @@ vector<special> specials = {
   {"Trasher", "all discarded unused tiles, as well as this, are premanently deleted", 0, 0xFF000000, 0xFF808080},
   {"Trasher+", "all discarded unused tiles are premanently deleted", 0, 0xFF000000, 0xFFFFFFFF},
   {"Duplicator", "%+d copies of all used tiles (but this one is deleted)", 1, 0xFFFF40FF, 0xFF00C000},
-  {"Retain", "%d first unused tiles are retained for the next turn", 4, 0xFF905000, 0xFFFFFFFF},
+  {"Retain", "%d first unused tiles are retained for the next turn", 2, 0xFF905000, 0xFFFFFFFF},
 
   /* next-turn effects */
-  {"Drawing", "%+d draw in the next round", 4, 0xFFFFC080, 0xFF000000},
+  {"Drawing", "%+d draw in the next round", 2, 0xFFFFC080, 0xFF000000},
   {"Rich", "%+d shop choices in the next round", 5, 0xFFFFE500, 0xFF800000},
 
   /* other */
