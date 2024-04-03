@@ -54,8 +54,8 @@ vector<special> specials = {
   {"Premium", "%+d multiplier when used", 1, 0xFFFF8080, 0xFF000000},
   {"Horizontal", "%+d multiplier when used horizontally", 2, 0xFFFF80C0, 0xFF000000},
   {"Vertical", "%+d multiplier when used vertically", 2, 0xFFFF80C0, 0xFF000000},
-  {"Initial", "%+d multiplier when this is the first letter of the word", 2, 0xFFFFFFFF, 0xFF808080},
-  {"Final", "%+d multiplier when this is the last letter of the word", 2, 0xFFFFFFFF, 0xFF808080},
+  {"Initial", "%+d multiplier when this is the first letter of the word", 3, 0xFFFFFFFF, 0xFF808080},
+  {"Final", "%+d multiplier when this is the last letter of the word", 3, 0xFFFFFFFF, 0xFF808080},
   {"Red", "%+d multiplier when put on a red square", 4, 0xFFFF2020, 0xFFFFFFFF},
   {"Blue", "%+d multiplier when put on a blue square", 3, 0xFF2020FF, 0xFFFFFFFF},
 
