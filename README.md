@@ -20,6 +20,8 @@ V7: better portal graphics, fixed a crash when removing a portal by clicking it,
 
 V8: improved balance: nerfed draw/retain (drawing the whole bag is boring because you would just reuse the same word), nerfed wild (reset value to 0), buffed initial/final, increased taxes and shop prices
 
+V9: changed soothing color; the radius of seen board is now bigger (but fixed); randarts no longer get 'has no special powers'
+
 Plans: better dictionary
 
 Click [this](https://zenorogue.github.io/seuphorica/) to play!
