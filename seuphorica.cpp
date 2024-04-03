@@ -659,10 +659,14 @@ void sort_by(int i) {
   if(i == 5) {
     reverse(discard.begin(), discard.end());
     reverse(deck.begin(), deck.end());
+    reverse(shop.begin(), shop.end());
+    reverse(drawn.begin(), drawn.end());
     }
   else {
     stable_sort(discard.begin(), discard.end(), f);
     stable_sort(deck.begin(), deck.end(), f);
+    stable_sort(shop.begin(), shop.end(), f);
+    stable_sort(drawn.begin(), drawn.end(), f);
     }
   check_discard();
   }
