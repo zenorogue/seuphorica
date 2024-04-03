@@ -18,7 +18,9 @@ V6: fixed both ends of portal being added to discard
 
 V7: better portal graphics, fixed a crash when removing a portal by clicking it, fixed missing details in the game log, show tax when skipping move
 
-Plans: better dictionary, better balance
+V8: improved balance: nerfed draw/retain (drawing the whole bag is boring because you would just reuse the same word), nerfed wild (reset value to 0), buffed initial/final, increased taxes and shop prices
+
+Plans: better dictionary
 
 Click [this](https://zenorogue.github.io/seuphorica/) to play!
 
