@@ -27,3 +27,5 @@ Plans: better dictionary
 Click [this](https://zenorogue.github.io/seuphorica/) to play!
 
 Also on [this](https://zenorogue.itch.io/seuphorica)
+
+Thanks to Michael, orange triangle, Corey Hardt, and Jason Carr for improvement suggestions!
