@@ -331,14 +331,14 @@ int roundindex = 1;
 int total_gain = 0;
 
 int taxf(int r) {
-  double rd = r;
-  return (4 + rd) * (9 + rd) * (9 + rd) * (39 + rd) * (79 + rd) / 320000;
+  double rd = r - 1;
+  return (5 + rd) * (10 + rd) * (10 + rd) * (20 + rd) * (40 + rd) / 80000;
   }
 
 int tax() { return taxf(roundindex); }
 
 int get_max_price(int r) {
-  return (9 + r) * (24 + r) / 25;
+  return (9 + r) * (9 + r) * (25 + r) / 250;
   }
 
 int get_min_price(int r) {
