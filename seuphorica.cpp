@@ -424,7 +424,10 @@ void compute_score() {
       auto& b = board.at(at);
       word += b.letter;
       allword.push_back(at);
+
       if(just_placed.count(at)) placed += b.value;
+      else is_crossing = true;
+
       all += b.value;
       int val = gsp(b).value * b.rarity;
 
@@ -474,7 +477,6 @@ void compute_score() {
     scoring << "<b>" << word << ":</b> " << placed << "*" << all << "*" << mul1 << " = " << placed*all*mul1;
     if(!is_legal) { scoring << " <font color='#FF4040'>(illegal word!)</font>"; illegal_words = true; }
     scoring << "<br/>";
-    if(placed != all) is_crossing = true;
     ev.total_score += placed * all * mul;
 
     if(is_legal && has_reverse && ok(revword(word))) {
