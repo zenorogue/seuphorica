@@ -22,10 +22,12 @@ V8: improved balance: nerfed draw/retain (drawing the whole bag is boring becaus
 
 V9: changed soothing color; the radius of seen board is now bigger (but fixed); randarts no longer get 'has no special powers'
 
+V10: fixed a bug with crossing on 0-value letters not detected
+
 Plans: better dictionary
 
 Click [this](https://zenorogue.github.io/seuphorica/) to play!
 
 Also on [this](https://zenorogue.itch.io/seuphorica)
 
-Thanks to Michael, orange triangle, Corey Hardt, and Jason Carr for improvement suggestions!
+Thanks to Michael, orange triangle, Corey Hardt, Jason Carr, and FoxSylv for improvement suggestions!
