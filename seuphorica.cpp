@@ -1,7 +1,3 @@
-// to do:
-// - actual dictionary
-// - sorting
-
 #include <iostream>
 #include <string>
 #include <vector>
