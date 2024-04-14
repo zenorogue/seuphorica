@@ -998,7 +998,7 @@ extern "C" {
     }
 
   void buy(int i) {
-    if(cash > shop[i].price) {
+    if(cash >= shop[i].price) {
       cash -= shop[i].price;
       drawn.insert(drawn.begin(), std::move(shop[i])); shop.erase(shop.begin() + i); draw_board();
       }
