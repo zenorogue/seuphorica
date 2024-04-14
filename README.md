@@ -24,6 +24,8 @@ V9: changed soothing color; the radius of seen board is now bigger (but fixed); 
 
 V10: fixed a bug with crossing on 0-value letters not detected
 
+V11: fixed not being able to spend all your coins (> vs ≥)
+
 Plans: better dictionary
 
 Click [this](https://zenorogue.github.io/seuphorica/) to play!
