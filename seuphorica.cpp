@@ -11,6 +11,7 @@
 #include <set>
 #include <sstream>
 #include "visutils.h"
+#include <emscripten/fetch.h>
 
 const int lsize = 40;
 
@@ -24,20 +25,50 @@ struct special {
   unsigned text_color;
   };
 
-map<int, set<string>> dictionary;
+enum class language_state { not_fetched, fetch_started, fetch_progress, fetch_success, fetch_fail };
 
-void read_dictionary() {
-  ifstream f("wordlist.txt");
+struct language {
+  language_state state;
+  map<int, set<string>> dictionary;
+  };
+
+language english;
+
+void draw_board();
+
+void downloadSucceeded(emscripten_fetch_t *fetch) {
+  language& l = *((language*) fetch->userData);
   string s;
-  while(getline(f,s)) {
-    for(char& c: s) c &= ~32;
-    dictionary[s.size()].insert(s);
+  for(int i=0; i<fetch->numBytes; i++) {
+    char ch = fetch->data[i];
+    if(ch == 10) { l.dictionary[s.size()].insert(s); s = ""; }
+    else s += ch;
     }
-  dictionary[10].insert("SEUPHORICA");
+  l.dictionary[10].insert("SEUPHORICA");
+  l.state = language_state::fetch_success;
+  draw_board();
+  }
+
+void downloadFailed(emscripten_fetch_t *fetch) {
+  language& l = *((language*) fetch->userData);
+  l.state = language_state::fetch_fail;
+  draw_board();
+  }
+
+void read_dictionary(language& l) {
+  emscripten_fetch_attr_t attr;
+  emscripten_fetch_attr_init(&attr);
+  strcpy(attr.requestMethod, "GET");
+  attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY | EMSCRIPTEN_FETCH_PERSIST_FILE;
+  attr.userData = &l;
+  attr.onsuccess = downloadSucceeded;
+  attr.onerror = downloadFailed;
+  l.state = language_state::fetch_started;
+  emscripten_fetch(&attr, "wordlist.txt");
   }
 
 bool ok(const string& word) {
-  return dictionary[word.size()].count(word);
+  return english.dictionary[word.size()].count(word);
   }
 
 string revword(string word) {
@@ -356,6 +387,18 @@ struct eval {
 eval ev;
 
 void compute_score() {
+
+  if(english.state == language_state::not_fetched) read_dictionary(english);
+  if(english.state == language_state::fetch_started) {
+     ev.current_scoring = "Downloading the dictionary...";
+     ev.valid_move = false;
+     return;
+     }
+  if(english.state == language_state::fetch_fail) {
+     ev.current_scoring = "Failed to download the dictionary!";
+     ev.valid_move = false;
+     return;
+     }
 
   if(placing_portal) { ev.current_scoring = "You must finish placing the portal";  ev.valid_move = false; return; }
 
@@ -735,7 +778,7 @@ void update_dictionary(string s) {
     for(auto& t: shop) in_shop[t.letter]++;
     int len = s.size();
     int qty = 0;
-    for(const string& word: dictionary[len]) {
+    for(const string& word: english.dictionary[len]) {
       auto in_hand2 = in_hand;
       auto in_shop2 = in_shop;
       for(int i=0; i<word.size(); i++) {
@@ -926,7 +969,6 @@ void accept_move() {
   }
 
 int init(bool _is_mobile) {
-  read_dictionary();
   for(char ch='A'; ch<='Z'; ch++) {
     deck.emplace_back(tile(ch, sp::standard));
     }
