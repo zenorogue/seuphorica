@@ -26,9 +26,43 @@ enum class language_state { not_fetched, fetch_started, fetch_progress, fetch_su
 struct language {
   language_state state;
   map<int, set<string>> dictionary;
+  string name;
+  string gamename;
+  string fname;
+  int offset, bytes;
+  vector<string> alphabet;
+  language(const string& name, const string& gamename, const string& fname, const string& alph);
   };
 
-language english;
+int utf8_len(char ch) {
+  unsigned char uch = (unsigned char) ch;
+  if(uch < 128) return 1;
+  if(uch >= 192 && uch < 224) return 2;
+  if(uch >= 224 && uch < 240) return 3;
+  if(uch >= 240 && uch < 248) return 4;
+  return 5;
+  }
+
+int utf8_length(const string& s) {
+  int i = 0;
+  int len = 0;
+  while(i < s.size()) i += utf8_len(s[i]), len++;
+  return len;
+  }
+
+language english("English", "SEUPHORICA", "wordlist.txt", "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+language polski("polski", "SEUFORIKA", "slowa.txt", "AĄBCĆDEĘFGHIJKLŁMNŃOÓPRSŚTUWYZŹŻ");
+language *current = &english;
+
+language::language(const string& name, const string& gamename, const string& fname, const string& alph) : name(name), gamename(gamename), fname(fname) {
+  int i = 0;
+  while(i < alph.size()) {
+    int len = utf8_len(alph[i]);
+    string letter = alph.substr(i, len);
+    i += len;
+    alphabet.push_back(letter);
+    }
+  }
 
 void draw_board();
 
@@ -37,17 +71,27 @@ void downloadSucceeded(emscripten_fetch_t *fetch) {
   string s;
   for(int i=0; i<fetch->numBytes; i++) {
     char ch = fetch->data[i];
-    if(ch == 10) { l.dictionary[s.size()].insert(s); s = ""; }
+    if(ch == 10) { l.dictionary[utf8_length(s)].insert(s); s = ""; }
     else s += ch;
     }
-  l.dictionary[10].insert("SEUPHORICA");
+  l.dictionary[utf8_length(l.gamename)].insert(l.gamename);
   l.state = language_state::fetch_success;
+  emscripten_fetch_close(fetch);
   draw_board();
   }
 
 void downloadFailed(emscripten_fetch_t *fetch) {
   language& l = *((language*) fetch->userData);
   l.state = language_state::fetch_fail;
+  emscripten_fetch_close(fetch);
+  draw_board();
+  }
+
+void downloadProgress(emscripten_fetch_t *fetch) {
+  language& l = *((language*) fetch->userData);
+  l.state = language_state::fetch_progress;
+  l.bytes = fetch->totalBytes;
+  l.offset = fetch->dataOffset;
   draw_board();
   }
 
@@ -59,16 +103,13 @@ void read_dictionary(language& l) {
   attr.userData = &l;
   attr.onsuccess = downloadSucceeded;
   attr.onerror = downloadFailed;
+  attr.onprogress = downloadProgress;
   l.state = language_state::fetch_started;
-  emscripten_fetch(&attr, "wordlist.txt");
+  emscripten_fetch(&attr, l.fname.c_str());
   }
 
-bool ok(const string& word) {
-  return english.dictionary[word.size()].count(word);
-  }
-
-string revword(string word) {
-  reverse(word.begin(), word.end()); return word;
+bool ok(const string& word, int len) {
+  return current->dictionary[len].count(word);
   }
 
 vector<special> specials = {
@@ -130,12 +171,12 @@ map<sp, vector<sp>> artifacts;
 
 struct tile {
   int id;
-  char letter;
+  string letter;
   int value;
   sp special;
   int price;
   int rarity;
-  tile(char l, sp special, int value = 1) : letter(l), value(value), special(special) {
+  tile(string l, sp special, int value = 1) : letter(l), value(value), special(special) {
     id = next_id++; price = 0; rarity = 1;
     }
   };
@@ -224,7 +265,7 @@ string tile_desc(const tile& t) {
   string out;
   string cap = s.caption;
   cap += " ";
-  cap += char(t.letter);
+  cap += t.letter;
   cap += to_string(t.value);
   if(t.special >= sp::first_artifact)
     out = "<b><font color='#FFD500'>" + cap + ": </font></b>";
@@ -263,7 +304,7 @@ void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
   style b(lines, s.background, 1.5 * wide);
   style bempty(0xFF808080, 0xFF101010, 0.5);
 
-  path pa(t.letter ? b : bempty);
+  path pa(t.special != sp::notile ? b : bempty);
   pa.add(vec(x, y));
   pa.add(vec(x+lsize, y));
   pa.add(vec(x+lsize, y+lsize));
@@ -338,14 +379,13 @@ void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
     p += pa1;
     }
 
-  if(t.letter) {
+  if(t.special != sp::notile) {
     font ff = makefont("DejaVuSans-Bold.ttf", ";font-family:'DejaVu Sans';font-weight:bold");
     style bblack(0, s.text_color, 0);
-    string s; s += (t.letter);
-    text t1(bblack, ff, vec(x+lsize*.45, y+lsize*.35), center, lsize*.9, s);
+    text t1(bblack, ff, vec(x+lsize*.45, y+lsize*.35), center, lsize*.9, t.letter);
     t1.onclick = onc;
     p += t1;
-    s = to_string(t.value);
+    string s = to_string(t.value);
     text t2(bblack, ff, vec(x+lsize*.95, y+lsize*.95), botright, lsize*.3, s);
     t2.onclick = onc;
     p += t2;
@@ -384,17 +424,25 @@ eval ev;
 
 void compute_score() {
 
-  if(english.state == language_state::not_fetched) read_dictionary(english);
-  if(english.state == language_state::fetch_started) {
-     ev.current_scoring = "Downloading the dictionary...";
-     ev.valid_move = false;
-     return;
-     }
-  if(english.state == language_state::fetch_fail) {
-     ev.current_scoring = "Failed to download the dictionary!";
-     ev.valid_move = false;
-     return;
-     }
+  if(current->state == language_state::not_fetched) {
+    read_dictionary(*current);
+    }
+  if(current->state == language_state::fetch_started) {
+    ev.current_scoring = "Downloading the dictionary...";
+    ev.valid_move = false;
+    return;
+    }
+  if(current->state == language_state::fetch_progress) {
+    ev.current_scoring = "Downloading the dictionary... " + to_string(current->offset) + " of " + to_string(current->bytes) + " B";
+    ev.valid_move = false;
+    return;
+    }
+
+  if(current->state == language_state::fetch_fail) {
+    ev.current_scoring = "Failed to download the dictionary!";
+    ev.valid_move = false;
+    return;
+    }
 
   if(placing_portal) { ev.current_scoring = "You must finish placing the portal";  ev.valid_move = false; return; }
 
@@ -456,12 +504,14 @@ void compute_score() {
     int rmul = 1;
     int qsooth = 0;
     int sooth = 0, rsooth = 0;
+    string rword;
 
     while(board.count(at)) {
       needed.erase(at);
       ev.used_tiles.insert(at);
       auto& b = board.at(at);
       word += b.letter;
+      rword = b.letter + rword;
       allword.push_back(at);
 
       if(just_placed.count(at)) placed += b.value;
@@ -493,23 +543,23 @@ void compute_score() {
       if(has_power(b, sp::final, val)) affect_mul(!board.count(at), 1);
       if(has_power(b, sp::initial, val)) affect_mul(!board.count(at), 2);
       index++;
-      if(has_tricky && ok(word) && board.count(at) && !old_tricks.count(allword)) {
+      if(has_tricky && ok(word, index) && board.count(at) && !old_tricks.count(allword)) {
         int mul1 = mul + qsooth * sooth;
         scoring << "<b>" << word << ":</b> " << placed << "*" << all << "*" << mul1 << " = " << placed*all*mul1 << "<br/>";
         ev.total_score += placed * all * mul1;
         ev.new_tricks.insert(allword);
         }
-      if(has_tricky && has_reverse && ok(revword(word)) && board.count(at) && !old_tricks.count(allword)) {
+      if(has_tricky && has_reverse && ok(rword, index) && board.count(at) && !old_tricks.count(allword)) {
         int mul1 = rmul + qsooth * rsooth;
-        scoring << "<b>" << revword(word) << ":</b> " << placed << "*" << all << "*" << mul1 << " = " << placed*all*mul1 << "<br/>";
+        scoring << "<b>" << rword << ":</b> " << placed << "*" << all << "*" << mul1 << " = " << placed*all*mul1 << "<br/>";
         ev.total_score += placed * all * mul1;
         ev.new_tricks.insert(allword);
         }
       }
     if(needed.empty()) ev.valid_move = true;
-    bool is_legal = ok(word);
-    if(!is_legal && has_reverse && ok(revword(word))) {
-      has_reverse = false; is_legal = true; swap(mul, rmul); swap(sooth, rsooth); word = revword(word);
+    bool is_legal = ok(word, index);
+    if(!is_legal && has_reverse && ok(rword, index)) {
+      has_reverse = false; is_legal = true; swap(mul, rmul); swap(sooth, rsooth); swap(word, rword);
       }
     if(!is_legal && optional) continue;
     int mul1 = mul + qsooth * sooth;
@@ -518,8 +568,8 @@ void compute_score() {
     scoring << "<br/>";
     ev.total_score += placed * all * mul;
 
-    if(is_legal && has_reverse && ok(revword(word))) {
-      swap(mul, rmul); swap(sooth, rsooth); word = revword(word);
+    if(is_legal && has_reverse && ok(rword, index)) {
+      swap(mul, rmul); swap(sooth, rsooth); swap(word, rword);
       mul1 = mul + qsooth * sooth;
       scoring << "<b>" << word << ":</b> " << placed << "*" << all << "*" << mul1 << " = " << placed*all*mul1 << "<br/>";
       ev.total_score += placed * all * mul1;
@@ -766,22 +816,25 @@ void view_help() {
 void update_dictionary(string s) {
   stringstream ss;
   for(char& c: s) if(c >= 'a' && c <= 'z') c -= 32;
-  if(s.size() < 2) ss << "Enter at least 2 letters!";
+  int len = utf8_length(s);
+  if(len < 2) ss << "Enter at least 2 letters!";
   else {
-    map<char, int> in_hand;
-    map<char, int> in_shop;
+    map<string, int> in_hand;
+    map<string, int> in_shop;
     for(auto& t: drawn) in_hand[t.letter]++;
     for(auto& t: shop) in_shop[t.letter]++;
-    int len = s.size();
     int qty = 0;
-    for(const string& word: english.dictionary[len]) {
+    for(const string& word: current->dictionary[len]) {
       auto in_hand2 = in_hand;
       auto in_shop2 = in_shop;
-      for(int i=0; i<word.size(); i++) {
-        if(word[i] == s[i]) continue;
-        if(s[i] == '.') continue;
-        if(s[i] == '$' && in_shop2[word[i]] > 0) { in_shop2[word[i]]--; continue; }
-        if((s[i] == '?' || s[i] == '$') && in_hand2[word[i]] > 0) { in_hand2[word[i]]--; continue; }
+      int spos = 0, wpos = 0;
+      for(int i=0; i<len; i++) {
+        string wi = word.substr(wpos, utf8_len(word[wpos])); wpos += utf8_len(word[wpos]);
+        string si = s.substr(spos, utf8_len(s[spos])); spos += utf8_len(s[spos]);
+        if(wi == si) continue;
+        if(si == ".") continue;
+        if(si == "$" && in_shop2[wi] > 0) { in_shop2[wi]--; continue; }
+        if((si == "?" || si == "$") && in_hand2[wi] > 0) { in_hand2[wi]--; continue; }
         goto next_word;
         }
       qty++;
@@ -868,7 +921,7 @@ void build_shop(int qty = 6) {
   for(auto& t: shop) add_to_log("ignored: "+short_desc(t)+ " for " + to_string(t.price));
   shop.clear();
   for(int i=0; i < qty; i++) {
-    char l = 'A' + rand() % 26;
+    string l = current->alphabet[rand() % current->alphabet.size()];
     if(i == 0) l = "AEIOU" [rand() % 5];
     int val = 1;
     int max_price = get_max_price(roundindex);
@@ -965,13 +1018,15 @@ void accept_move() {
   }
 
 int init(bool _is_mobile) {
-  for(char ch='A'; ch<='Z'; ch++) {
-    deck.emplace_back(tile(ch, sp::standard));
+  for(const string& s: current->alphabet) {
+    deck.emplace_back(tile(s, sp::standard));
     }
   int x = 3;
-  string title = "SEUPHORICA";
+  string title = current->gamename;
+  // todo: use UTF8
   for(char c: title) {
-    board.emplace(coord{x++, 7}, tile{c, sp::placed});
+    string s0 = ""; s0 += c;
+    board.emplace(coord{x++, 7}, tile{s0, sp::placed});
     }
   srand(time(NULL));
   add_to_log("started SEUPHORICA");
@@ -1049,7 +1104,7 @@ extern "C" {
   void back_to_game() { draw_board(); }
 
   void wild_become(int id, const char *s) {
-    if(drawn.size() > id && has_power(drawn[id], sp::wild)) { drawn[id].letter = s[0]; drawn[id].value = 0; } draw_board();
+    if(drawn.size() > id && has_power(drawn[id], sp::wild)) { drawn[id].letter = s; drawn[id].value = 0; } draw_board();
     }
 
   void play() {
