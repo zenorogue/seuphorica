@@ -28,7 +28,7 @@ V11: fixed not being able to spend all your coins (> vs ≥)
 
 V12: multi-lingual support, seed support
 
-Plans: better dictionary
+Plans: better dictionary, translate the game itself, multi-letters, drag and drop
 
 Click [this](https://zenorogue.github.io/seuphorica/) to play!
 
