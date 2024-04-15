@@ -56,6 +56,8 @@ language english("English", "SEUPHORICA", "wordlist.txt", "ABCDEFGHIJKLMNOPQRSTU
 language polski("polski", "SEUFORIKA", "slowa.txt", "AĄBCĆDEĘFGHIJKLŁMNŃOÓPRSŚTUWYZŹŻ", "🇵🇱");
 language *current = &english;
 
+set<language*> polyglot_languages = {&english, &polski};
+
 vector<language*> languages = {&english, &polski};
 
 language::language(const string& name, const string& gamename, const string& fname, const string& alph, const string& flag) : name(name), gamename(gamename), fname(fname), flag(flag) {
@@ -112,8 +114,13 @@ void read_dictionary(language& l) {
   emscripten_fetch(&attr, l.fname.c_str());
   }
 
-bool ok(const string& word, int len) {
-  return current->dictionary[len].count(word);
+bool ok(const string& word, int len, language* cur) {
+  return cur->dictionary[len].count(word);
+  }
+
+bool not_in_base(const string& letter) {
+  for(auto& x: current->alphabet) if(x == letter) return false;
+  return true;
   }
 
 vector<special> specials = {
@@ -153,6 +160,10 @@ vector<special> specials = {
   {"Soothing", "every failed multiplier tile becomes %+d multiplier (does not stack)", 1, 0xFF80FF80, 0xFF008000},
   {"Wild", "you can rewrite the letter while it is in your hand, but it resets the value to 0", 0, 0xFF800000, 0xFFFF8000},
   {"Portal", "placed in two locations; teleports between them (max distance %d)", 6, 0xFF000080, 0xFFFFFFFF},
+
+  /* language */
+  {"English", "words in English are accepted. Score twice if valid in both languages. %+d if this letter is not in basic language", 0, 0xFFFFFF80, 0xFF000000},
+  {"Polskie", "słowa po polsku są akceptowane. Wynik liczony dwa razy, jeśli poprawne słowo w obu językach. %+d jeśli ta litera nie jest w języku podstawowym", 0, 0xFFFFFF80, 0xFF000000},
   };
 
 enum class sp {
@@ -162,7 +173,11 @@ enum class sp {
   flying, bending, reversing,
   teacher, trasher, multitrasher, duplicator, retain,
   drawing, rich,
-  radiating, tricky, soothing, wild, portal, first_artifact
+  radiating, tricky, soothing, wild, portal,
+
+  english, polski,
+
+  first_artifact
   };
 
 stringstream game_log;
@@ -320,6 +335,22 @@ bool has_power(const tile& t, sp which) {
   int dummy; return has_power(t, which, dummy);
   }
 
+language *get_language(sp s) {
+  if(s == sp::polski) return &polski;
+  if(s == sp::english) return &english;
+  return nullptr;
+  }
+
+language *get_language(tile &t, int& val) {
+  if(has_power(t, sp::english, val)) return &english;
+  if(has_power(t, sp::polski, val)) return &polski;
+  return nullptr;
+  }
+
+language *get_language(tile &t) {
+  int dummy; return get_language(t, dummy);
+  }
+
 void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
   auto& s = gsp(t);
   unsigned lines = 0xFF000000;
@@ -405,6 +436,15 @@ void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
     p += pa1;
     }
 
+  language *lang = get_language(t);
+  if(lang) {
+    font ff = makefont("DejaVuSans-Bold.ttf", ";font-family:'DejaVu Sans';font-weight:bold");
+    style bblack(0, s.text_color, 0);
+    text t1(bblack, ff, vec(x+lsize*.5, y+lsize*.35), center, lsize * .9, lang->flag);
+    t1.onclick = onc;
+    p += t1;
+    }
+
   if(t.special != sp::notile) {
     font ff = makefont("DejaVuSans-Bold.ttf", ";font-family:'DejaVu Sans';font-weight:bold");
     style bblack(0, s.text_color, 0);
@@ -450,24 +490,27 @@ eval ev;
 
 void compute_score() {
 
-  if(current->state == language_state::not_fetched) {
-    read_dictionary(*current);
-    }
-  if(current->state == language_state::fetch_started) {
-    ev.current_scoring = "Downloading the dictionary...";
-    ev.valid_move = false;
-    return;
-    }
-  if(current->state == language_state::fetch_progress) {
-    ev.current_scoring = "Downloading the dictionary... " + to_string(current->offset) + " of " + to_string(current->bytes) + " B";
-    ev.valid_move = false;
-    return;
-    }
+  auto langs = polyglot_languages; langs.insert(current);
+  for(auto lang: langs) {
+    if(lang->state == language_state::not_fetched) {
+      read_dictionary(*lang);
+      }
+    if(lang->state == language_state::fetch_started) {
+      ev.current_scoring = "Downloading the dictionary...";
+      ev.valid_move = false;
+      return;
+      }
+    if(lang->state == language_state::fetch_progress) {
+      ev.current_scoring = "Downloading the dictionary... " + to_string(lang->offset) + " of " + to_string(lang->bytes) + " B";
+      ev.valid_move = false;
+      return;
+      }
 
-  if(current->state == language_state::fetch_fail) {
-    ev.current_scoring = "Failed to download the dictionary!";
-    ev.valid_move = false;
-    return;
+    if(lang->state == language_state::fetch_fail) {
+      ev.current_scoring = "Failed to download the dictionary!";
+      ev.valid_move = false;
+      return;
+      }
     }
 
   if(placing_portal) { ev.current_scoring = "You must finish placing the portal";  ev.valid_move = false; return; }
@@ -524,12 +567,13 @@ void compute_score() {
     for(auto p: just_placed) if(!has_power(board.at(p), sp::flying)) needed.insert(p);
     int index = 0;
     bool has_tricky = false;
-    bool has_reverse = false;
+    int directions = 1;
     bool optional = board.count(at-next);
     vector<coord> allword;
     int rmul = 1;
     int qsooth = 0;
     int sooth = 0, rsooth = 0;
+    set<language*> polyglot = { current };
     string rword;
 
     while(board.count(at)) {
@@ -553,7 +597,7 @@ void compute_score() {
 
       if(has_power(b, sp::tricky, val)) has_tricky = true;
       if(has_power(b, sp::soothing, val)) qsooth = max(qsooth, val);
-      if(has_power(b, sp::reversing, val)) has_reverse = true;
+      if(has_power(b, sp::reversing, val)) directions = 2;
       if(has_power(b, sp::bending, val)) next = next.mirror();
       if(has_power(b, sp::portal, val)) { at = portals.at(at); ev.used_tiles.insert(at); needed.erase(at); }
       if(has_power(b, sp::premium, val)) affect_mul(true);
@@ -565,40 +609,51 @@ void compute_score() {
       if(has_power(b, sp::final, val)) { affect_mul(index == 0, 2); }
       if(has_power(b, sp::bending, val))
         affect_mul(board.count(at-coord(1,0)) && board.count(at+coord(1,0)) && board.count(at-coord(0,1)) && board.count(at+coord(0,1)));
+
+      auto lang = get_language(b, val);
+      if(lang) { polyglot.insert(lang); affect_mul(not_in_base(b.letter)); }
+
       at = at + next;
       if(has_power(b, sp::final, val)) affect_mul(!board.count(at), 1);
       if(has_power(b, sp::initial, val)) affect_mul(!board.count(at), 2);
       index++;
-      if(has_tricky && ok(word, index) && board.count(at) && !old_tricks.count(allword)) {
-        int mul1 = mul + qsooth * sooth;
-        scoring << "<b>" << word << ":</b> " << placed << "*" << all << "*" << mul1 << " = " << placed*all*mul1 << "<br/>";
-        ev.total_score += placed * all * mul1;
-        ev.new_tricks.insert(allword);
-        }
-      if(has_tricky && has_reverse && ok(rword, index) && board.count(at) && !old_tricks.count(allword)) {
-        int mul1 = rmul + qsooth * rsooth;
-        scoring << "<b>" << rword << ":</b> " << placed << "*" << all << "*" << mul1 << " = " << placed*all*mul1 << "<br/>";
-        ev.total_score += placed * all * mul1;
-        ev.new_tricks.insert(allword);
+      if(has_tricky && board.count(at) && !old_tricks.count(allword)) {
+        for(int rd=0; rd<directions; rd++) for(auto l: polyglot) {
+          auto& nword = rd ? rword : word;
+          auto& nmul = rd ? rmul : mul;
+          if(ok(word, index, l)) {
+            int mul1 = nmul + qsooth * sooth;
+            scoring << "<b>" << nword << ":</b> " << placed << "*" << all << "*" << mul1 << " = " << placed*all*mul1;
+            if(l != current) scoring << " " << l->flag;
+            scoring << "<br/>";
+            ev.total_score += placed * all * mul1;
+            ev.new_tricks.insert(allword);
+            }
+          }
         }
       }
     if(needed.empty()) ev.valid_move = true;
-    bool is_legal = ok(word, index);
-    if(!is_legal && has_reverse && ok(rword, index)) {
-      has_reverse = false; is_legal = true; swap(mul, rmul); swap(sooth, rsooth); swap(word, rword);
-      }
-    if(!is_legal && optional) continue;
-    int mul1 = mul + qsooth * sooth;
-    scoring << "<b>" << word << ":</b> " << placed << "*" << all << "*" << mul1 << " = " << placed*all*mul1;
-    if(!is_legal) { scoring << " <font color='#FF4040'>(illegal word!)</font>"; illegal_words = true; }
-    scoring << "<br/>";
-    ev.total_score += placed * all * mul;
+    bool is_legal = false;
 
-    if(is_legal && has_reverse && ok(rword, index)) {
-      swap(mul, rmul); swap(sooth, rsooth); swap(word, rword);
-      mul1 = mul + qsooth * sooth;
-      scoring << "<b>" << word << ":</b> " << placed << "*" << all << "*" << mul1 << " = " << placed*all*mul1 << "<br/>";
-      ev.total_score += placed * all * mul1;
+    for(int rd=0; rd<directions; rd++) for(auto l: polyglot) {
+      auto& nword = rd ? rword : word;
+      auto& nmul = rd ? rmul : mul;
+      int mul1 = nmul + qsooth * sooth;
+      if(ok(nword, index, l)) {
+        is_legal = true;
+        scoring << "<b>" << nword << ":</b> " << placed << "*" << all << "*" << mul1 << " = " << placed*all*mul1;
+        if(l != current) scoring << " " << l->flag;
+        scoring << "<br/>";
+        ev.total_score += placed * all * mul;
+        }
+      }
+
+    if(!is_legal && optional) continue;
+    if(!is_legal) {
+      int mul1 = mul + qsooth * sooth;
+      scoring << "<b>" << word << ":</b> " << placed << "*" << all << "*" << mul1 << " = " << placed*all*mul1;
+      scoring << " <font color='#FF4040'>(illegal word!)</font>"; illegal_words = true;
+      scoring << "<br/>";
       }
     }
 
@@ -957,20 +1012,27 @@ void draw_tiles(int qty = 8) {
     }
   }
 
+bool bad_language(sp s) {
+  auto lang = get_language(s);
+  return lang && !polyglot_languages.count(lang);
+  }
+
 sp basic_special() {
-  int q = 0;
-  while(q < 2) {
-    q = hrand(int(sp::first_artifact));
+  while(true) {
+    int q = hrand(int(sp::first_artifact));
+    if(q < 2) continue;
+    if(bad_language(sp(q))) continue;
+    return sp(q);
     }
-  return sp(q);
   }
 
 sp actual_basic_special() {
-  int q = 0;
-  while(q < 3) {
-    q = hrand(int(sp::first_artifact));
+  while(true) {
+    int q = hrand(int(sp::first_artifact));
+    if(q < 3) continue;
+    if(bad_language(sp(q))) continue;
+    return sp(q);
     }
-  return sp(q);
   }
 
 sp generate_artifact() {
@@ -991,7 +1053,10 @@ sp generate_artifact() {
     art.clear();
     for(int i=0; i<3; i++) art.push_back(actual_basic_special());
     bool reps = false;
-    for(int i=0; i<3; i++) for(int j=0; j<i; j++) if(art[i] == art[j]) reps = true;
+    for(int i=0; i<3; i++) for(int j=0; j<i; j++) {
+      if(art[i] == art[j]) reps = true;
+      if(get_language(art[i]) && get_language(art[j])) reps = true;
+      }
     if(reps) continue;
     break;
     }
