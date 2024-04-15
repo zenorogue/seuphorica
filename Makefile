@@ -14,3 +14,4 @@ test: seuphorica.js
 	cp slowa.txt ~/public_html/seuphorica
 	cp german.txt ~/public_html/seuphorica
 	cp french.txt ~/public_html/seuphorica
+	cp fise-2.txt ~/public_html/seuphorica
