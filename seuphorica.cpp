@@ -501,7 +501,12 @@ void compute_score() {
       return;
       }
     if(lang->state == language_state::fetch_progress) {
-      ev.current_scoring = "Downloading the dictionary... " + to_string(lang->offset) + " of " + to_string(lang->bytes) + " B";
+      int bytes = lang->bytes;
+      double pct = lang->offset * 1. / bytes;
+      char buf[64];
+      snprintf(buf, 64, "%4.1f%% of %.1f MiB", pct * 100, bytes / 1048576.);
+      ev.current_scoring = "Downloading the dictionary... ";
+      ev.current_scoring += buf;
       ev.valid_move = false;
       return;
       }
