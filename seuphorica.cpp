@@ -54,13 +54,14 @@ int utf8_length(const string& s) {
 
 language english("English", "SEUPHORICA", "wordlist.txt", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "🇬🇧");
 language polski("polski", "SEUFORIKA", "slowa.txt", "AĄBCĆDEĘFGHIJKLŁMNŃOÓPRSŚTUWYZŹŻ", "🇵🇱");
-language deutsch("deutsch", "SEUFORIKA", "slowa.txt", "ABCDEFGHIJKLMNOPQRSTUVWXYZÄÜÖ", "🇩🇪");
+language deutsch("deutsch", "SEUFORIKA", "german.txt", "ABCDEFGHIJKLMNOPQRSTUVWXYZÄÜÖ", "🇩🇪");
+language francais("français", "SEUFORICA", "french.txt", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "🇫🇷");
 
 language *current = &english;
 
 set<language*> polyglot_languages = {};
 
-vector<language*> languages = {&english, &polski, &deutsch};
+vector<language*> languages = {&english, &francais, &deutsch, &polski};
 
 language::language(const string& name, const string& gamename, const string& fname, const string& alph, const string& flag) : name(name), gamename(gamename), fname(fname), flag(flag) {
   int i = 0;
@@ -165,8 +166,9 @@ vector<special> specials = {
 
   /* language */
   {"English", "words in English are accepted. Score twice if valid in both languages. %+d if this letter is not in basic language", 3, 0xFFFFFF80, 0xFF000000},
-  {"Polskie", "słowa po polsku są akceptowane. Wynik liczony dwa razy, jeśli poprawne słowo w obu językach. %+d jeśli ta litera nie jest w języku podstawowym", 3, 0xFFFFFF80, 0xFF000000},
   {"Deutsch", "Wörter in deutscher Sprache werden akzeptiert. Bei Gültigkeit in beiden Sprachen doppelt punkten. %+d, wenn dieser Buchstabe nicht in der Basissprache vorliegt", 3, 0xFF40000, 0xFFFFFFFF},
+  {"Français", "les mots en français sont acceptés. Marquez deux fois si valide dans les deux langues. %+d si cette lettre n'est pas dans la langue de base", 3, 0xFFFFFF80, 0xFF000000},
+  {"Polskie", "słowa po polsku są akceptowane. Wynik liczony dwa razy, jeśli poprawne słowo w obu językach. %+d jeśli ta litera nie jest w języku podstawowym", 3, 0xFFFFFF80, 0xFF000000},
   };
 
 enum class sp {
@@ -178,7 +180,7 @@ enum class sp {
   drawing, rich,
   radiating, tricky, soothing, wild, portal,
 
-  english, polski, deutsch,
+  english, deutsch, francais, polski,
 
   first_artifact
   };
@@ -342,6 +344,7 @@ language *get_language(sp s) {
   if(s == sp::polski) return &polski;
   if(s == sp::english) return &english;
   if(s == sp::deutsch) return &deutsch;
+  if(s == sp::francais) return &francais;
   return nullptr;
   }
 
@@ -349,6 +352,7 @@ language *get_language(tile &t, int& val) {
   if(has_power(t, sp::english, val)) return &english;
   if(has_power(t, sp::polski, val)) return &polski;
   if(has_power(t, sp::deutsch, val)) return &deutsch;
+  if(has_power(t, sp::francais, val)) return &francais;
   return nullptr;
   }
 

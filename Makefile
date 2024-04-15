@@ -12,3 +12,5 @@ test: seuphorica.js
 	cp seuphorica.js ~/public_html/seuphorica
 	cp wordlist.txt ~/public_html/seuphorica
 	cp slowa.txt ~/public_html/seuphorica
+	cp german.txt ~/public_html/seuphorica
+	cp french.txt ~/public_html/seuphorica
