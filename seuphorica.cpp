@@ -922,7 +922,10 @@ void view_help() {
 
 language *next_language = current;
 
+string dictionary_checked;
+
 void update_dictionary(string s) {
+  dictionary_checked = s;
   stringstream ss;
   for(char& c: s) if(c >= 'a' && c <= 'z') c -= 32;
   int len = utf8_length(s);
@@ -933,7 +936,7 @@ void update_dictionary(string s) {
     for(auto& t: drawn) in_hand[t.letter]++;
     for(auto& t: shop) in_shop[t.letter]++;
     int qty = 0;
-    for(const string& word: current->dictionary[len]) {
+    for(const string& word: next_language->dictionary[len]) {
       auto in_hand2 = in_hand;
       auto in_shop2 = in_shop;
       int spos = 0, wpos = 0;
@@ -966,6 +969,14 @@ void view_dictionary() {
   ss << "<div style=\"float:left;width:40%\">"; 
   ss << "Enter the word to check whether it is in the dictionary.</br>";
   ss << "You can use: '.' for any letter, '?' for any letter in hand, '$' for any letter in hand or shop.</br><br/>";
+
+  if(polyglot_languages.size()) {
+    for(auto l: languages) {
+      add_button(ss, "set_language_dic(\"" + l->name + "\")", l->name + " " + l->flag);
+      }
+    ss << "<br/><br/>";
+    }
+
   ss << "<input id=\"query\" oninput=\"update_dict(document.getElementById('query').value)\" length=40 type=text/><br/><br/>";
   ss << "<div id=\"answer\"></div>";
   ss << "<br/><a onclick='back_to_game()'>back to game</a><br/>";
@@ -1034,6 +1045,11 @@ int init(bool _is_mobile);
 void set_language(const char *s) {
   for(auto l: languages) if(l->name == s) next_language = l;
   review_new_game();
+  }
+
+void set_language_dic(const char *s) {
+  for(auto l: languages) if(l->name == s) next_language = l;
+  update_dictionary(dictionary_checked);
   }
 
 void restart(const char *s, const char *poly) {
