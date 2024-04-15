@@ -56,7 +56,7 @@ language english("English", "SEUPHORICA", "wordlist.txt", "ABCDEFGHIJKLMNOPQRSTU
 language polski("polski", "SEUFORIKA", "slowa.txt", "AĄBCĆDEĘFGHIJKLŁMNŃOÓPRSŚTUWYZŹŻ", "🇵🇱");
 language *current = &english;
 
-set<language*> polyglot_languages = {&english, &polski};
+set<language*> polyglot_languages = {};
 
 vector<language*> languages = {&english, &polski};
 
@@ -902,6 +902,8 @@ void view_help() {
   set_value("output", ss.str());
   }
 
+language *next_language = current;
+
 void update_dictionary(string s) {
   stringstream ss;
   for(char& c: s) if(c >= 'a' && c <= 'z') c -= 32;
@@ -939,6 +941,7 @@ void update_dictionary(string s) {
   }
 
 void view_dictionary() {
+  next_language = current;
   stringstream ss;
 
   ss << "<div style=\"float:left;width:30%\">&nbsp;</div>";
@@ -953,9 +956,7 @@ void view_dictionary() {
   set_value("output", ss.str());
   }
 
-language *next_language = current;
-
-void view_new_game() {
+void review_new_game() {
   stringstream ss;
 
   ss << "<div style=\"float:left;width:30%\">&nbsp;</div>";
@@ -963,7 +964,10 @@ void view_new_game() {
 
   if(roundindex > 1) {
     ss << "Your last game:<br/>";
-    ss << "Language: " << current->name << " seed: " << gameseed << "<br/>";
+    ss << "Language: " << current->name;
+    for(auto lang: polyglot_languages) ss << " + " << lang->name;
+
+    ss << " seed: " << gameseed << "<br/>";
     ss << "Turn: " << roundindex << " total winnings: " << total_gain << " 🪙<br/><br/>";
     }
 
@@ -979,11 +983,33 @@ void view_new_game() {
 
   ss << "Seed: <input id=\"seed\" length=10 type=text/><br/>";
   ss << "<br/><br/>";
-  add_button(ss, "restart(document.getElementById(\"seed\").value)", "restart");
+
+  string pres;
+
+  ss << "Special letters can change the language to:<br>";
+  char key = 'a';
+
+  for(auto la: languages) {
+    if(la != next_language) {
+      string skey; skey += key;
+      ss << "<input id=\"" << skey << "\" type=\"checkbox\"/> " << la->name << " " << la->flag << "<br/>";
+      pres += "if(document.getElementById(\"" + skey + "\").checked) poly = poly + \"" + skey + "\"; ";
+      }
+    key++;
+    }
+
+  ss << "<br/><br/>";
+  add_button(ss, "poly = \"\"; " + pres + "restart(document.getElementById(\"seed\").value, poly)", "restart");
 
   ss << "</div></div>";
   set_value("output", ss.str());
   }
+
+void view_new_game() {
+  next_language = current;
+  review_new_game();
+  }
+
 
 int init(bool _is_mobile);
 
@@ -992,9 +1018,13 @@ void set_language(const char *s) {
   view_new_game();
   }
 
-void restart(const char *s) {
+void restart(const char *s, const char *poly) {
   if(!s[0]) gameseed = time(NULL);
   else gameseed = atoi(s);
+  string spoly = poly;
+  polyglot_languages = {};
+  for(char ch: spoly) if(ch >= 'a' && ch < 'a' + int(languages.size()))
+    polyglot_languages.insert(languages[ch - 'a']);
   current = next_language;
   init(false);
   }
