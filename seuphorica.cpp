@@ -1134,7 +1134,7 @@ void build_shop(int qty = 6) {
       }
     t.price = price;
     auto lang = get_language(t);
-    if(lang) t.letter = lang->alphabet[hrand(lang->alphabet.size())];
+    if(lang && i) t.letter = lang->alphabet[hrand(lang->alphabet.size())];
     shop.push_back(t);
     }
   }
