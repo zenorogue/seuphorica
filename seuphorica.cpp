@@ -693,11 +693,16 @@ void draw_board() {
   ss << "</div>";
   ss << "<div style=\"float:left;width:20%\">";
   ss << "Turn: " << roundindex << " total winnings: " << total_gain << " 🪙<br/>";
-  ss << ev.current_scoring << "<br/>";
-  if(ev.valid_move && just_placed.empty())
-    ss << "<a onclick='play()'>skip turn!</a><br/>";
-  else
-    if(ev.valid_move) ss << "<a onclick='play()'>play!</a><br/>";
+  ss << ev.current_scoring << "<br/><br/>";
+  if(ev.valid_move && just_placed.empty()) {
+    add_button(ss, "play()", "skip turn!");
+    ss << "<br/>";
+    }
+  else if(ev.valid_move) {
+    add_button(ss, "play()", "play!");
+    ss << "<br/>";
+    }
+  ss << "<hr/>";
   ss << "<a onclick='view_help()'>view help</a>";
   ss << " - <a onclick='view_dictionary()'>dictionary</a>";
   ss << " - <a onclick='view_game_log()'>view game log</a>";

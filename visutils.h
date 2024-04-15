@@ -62,6 +62,10 @@ void set_edit_value(string name, string s) {
   }
 #endif
 
+void add_button(ostream& of, string action, string text) {
+  of << "<button type='button' onclick='" << action << "'/>" << text << "</button>";
+  }
+
 inline void outputHTML(string s) {
 #ifdef EMSCRIPTEN
   set_value("result", s);
