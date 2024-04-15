@@ -54,11 +54,13 @@ int utf8_length(const string& s) {
 
 language english("English", "SEUPHORICA", "wordlist.txt", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "🇬🇧");
 language polski("polski", "SEUFORIKA", "slowa.txt", "AĄBCĆDEĘFGHIJKLŁMNŃOÓPRSŚTUWYZŹŻ", "🇵🇱");
+language deutsch("deutsch", "SEUFORIKA", "slowa.txt", "ABCDEFGHIJKLMNOPQRSTUVWXYZÄÜÖ", "🇩🇪");
+
 language *current = &english;
 
 set<language*> polyglot_languages = {};
 
-vector<language*> languages = {&english, &polski};
+vector<language*> languages = {&english, &polski, &deutsch};
 
 language::language(const string& name, const string& gamename, const string& fname, const string& alph, const string& flag) : name(name), gamename(gamename), fname(fname), flag(flag) {
   int i = 0;
@@ -162,8 +164,9 @@ vector<special> specials = {
   {"Portal", "placed in two locations; teleports between them (max distance %d)", 6, 0xFF000080, 0xFFFFFFFF},
 
   /* language */
-  {"English", "words in English are accepted. Score twice if valid in both languages. %+d if this letter is not in basic language", 0, 0xFFFFFF80, 0xFF000000},
-  {"Polskie", "słowa po polsku są akceptowane. Wynik liczony dwa razy, jeśli poprawne słowo w obu językach. %+d jeśli ta litera nie jest w języku podstawowym", 0, 0xFFFFFF80, 0xFF000000},
+  {"English", "words in English are accepted. Score twice if valid in both languages. %+d if this letter is not in basic language", 3, 0xFFFFFF80, 0xFF000000},
+  {"Polskie", "słowa po polsku są akceptowane. Wynik liczony dwa razy, jeśli poprawne słowo w obu językach. %+d jeśli ta litera nie jest w języku podstawowym", 3, 0xFFFFFF80, 0xFF000000},
+  {"Deutsch", "Wörter in deutscher Sprache werden akzeptiert. Bei Gültigkeit in beiden Sprachen doppelt punkten. %+d, wenn dieser Buchstabe nicht in der Basissprache vorliegt", 3, 0xFF40000, 0xFFFFFFFF},
   };
 
 enum class sp {
@@ -175,7 +178,7 @@ enum class sp {
   drawing, rich,
   radiating, tricky, soothing, wild, portal,
 
-  english, polski,
+  english, polski, deutsch,
 
   first_artifact
   };
@@ -338,12 +341,14 @@ bool has_power(const tile& t, sp which) {
 language *get_language(sp s) {
   if(s == sp::polski) return &polski;
   if(s == sp::english) return &english;
+  if(s == sp::deutsch) return &deutsch;
   return nullptr;
   }
 
 language *get_language(tile &t, int& val) {
   if(has_power(t, sp::english, val)) return &english;
   if(has_power(t, sp::polski, val)) return &polski;
+  if(has_power(t, sp::deutsch, val)) return &deutsch;
   return nullptr;
   }
 
