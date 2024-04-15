@@ -54,6 +54,8 @@ language english("English", "SEUPHORICA", "wordlist.txt", "ABCDEFGHIJKLMNOPQRSTU
 language polski("polski", "SEUFORIKA", "slowa.txt", "AĄBCĆDEĘFGHIJKLŁMNŃOÓPRSŚTUWYZŹŻ");
 language *current = &english;
 
+vector<language*> languages = {&english, &polski};
+
 language::language(const string& name, const string& gamename, const string& fname, const string& alph) : name(name), gamename(gamename), fname(fname) {
   int i = 0;
   while(i < alph.size()) {
@@ -699,6 +701,7 @@ void draw_board() {
   ss << "<a onclick='view_help()'>view help</a>";
   ss << " - <a onclick='view_dictionary()'>dictionary</a>";
   ss << " - <a onclick='view_game_log()'>view game log</a>";
+  ss << " - <a onclick='view_new_game()'>start new game</a>";
   ss << "</div></div>";
   ss << "</div>";
 
@@ -863,6 +866,26 @@ void view_dictionary() {
 
   set_value("output", ss.str());
   }
+
+void view_new_game() {
+  stringstream ss;
+
+  ss << "<div style=\"float:left;width:30%\">&nbsp;</div>";
+  ss << "<div style=\"float:left;width:40%\">";
+  for(auto l: languages) {
+    ss << "<a onclick='start_in(\"" << l->name << "\")'>" << l->name << "</a><br/>";
+    }
+  ss << "</div></div>";
+  set_value("output", ss.str());
+  }
+
+int init(bool _is_mobile);
+
+void start_in(const char *s) {
+  for(auto l: languages) if(l->name == s) current = l;
+  init(false);
+  }
+
 }
 
 void draw_tiles(int qty = 8) {
@@ -1018,6 +1041,13 @@ void accept_move() {
   }
 
 int init(bool _is_mobile) {
+  deck = {};
+  board = {};
+  drawn = {};
+  shop = {};
+  cash = 80;
+  roundindex = 1;
+  total_gain = 0;
   for(const string& s: current->alphabet) {
     deck.emplace_back(tile(s, sp::standard));
     }
