@@ -166,7 +166,7 @@ vector<special> specials = {
 
   /* language */
   {"English", "words in English are accepted. Score twice if valid in both languages. %+d if this letter is not in basic language", 3, 0xFFFFFF80, 0xFF000000},
-  {"Deutsch", "Wörter in deutscher Sprache werden akzeptiert. Bei Gültigkeit in beiden Sprachen doppelt punkten. %+d, wenn dieser Buchstabe nicht in der Basissprache vorliegt", 3, 0xFF40000, 0xFFFFFFFF},
+  {"Deutsch", "Wörter in deutscher Sprache werden akzeptiert. Bei Gültigkeit in beiden Sprachen doppelt punkten. %+d, wenn dieser Buchstabe nicht in der Basissprache vorliegt", 3, 0xFF400000, 0xFFFFFFFF},
   {"Français", "les mots en français sont acceptés. Marquez deux fois si valide dans les deux langues. %+d si cette lettre n'est pas dans la langue de base", 3, 0xFFFFFF80, 0xFF000000},
   {"Polskie", "słowa po polsku są akceptowane. Wynik liczony dwa razy, jeśli poprawne słowo w obu językach. %+d jeśli ta litera nie jest w języku podstawowym", 3, 0xFFFFFF80, 0xFF000000},
   };
