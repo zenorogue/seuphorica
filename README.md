@@ -26,10 +26,21 @@ V10: fixed a bug with crossing on 0-value letters not detected
 
 V11: fixed not being able to spend all your coins (> vs ≥)
 
+V12: multi-lingual support, seed support
+
 Plans: better dictionary
 
 Click [this](https://zenorogue.github.io/seuphorica/) to play!
 
 Also on [this](https://zenorogue.itch.io/seuphorica)
 
-Thanks to Michael, orange triangle, Corey Hardt, Jason Carr, and FoxSylv for improvement suggestions!
+Thanks to Michael, orange triangle, Corey Hardt, Jason Carr, FoxSylv, and ambersz for improvement suggestions!
+
+Dictionaries from:
+
+English: https://boardgames.stackexchange.com/questions/38366/latest-collins-scrabble-words-list-in-text-file (Collins)
+polski: https://sjp.pl (GPL 2 / Creative Commons Attribution 4.0 International)
+deutsch: https://github.com/enz/german-wordlist (CC-1.0)
+
+
+
