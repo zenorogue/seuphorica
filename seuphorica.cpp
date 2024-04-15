@@ -785,8 +785,8 @@ void draw_board() {
   ss << "<a onclick='view_help()'>view help</a>";
   ss << " - <a onclick='view_dictionary()'>dictionary</a>";
   ss << " - <a onclick='view_game_log()'>view game log</a>";
-  ss << "<br/><a onclick='view_new_game()'>start new game ";
-  for(auto& l: languages) ss << l->flag;
+  ss << "<br/><a onclick='view_new_game()'>start new game";
+  for(auto& l: languages) ss << " " << l->flag;
   ss << "</a>";
   ss << "</div></div>";
   ss << "</div>";
