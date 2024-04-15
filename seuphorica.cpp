@@ -8,6 +8,7 @@
 #include <sstream>
 #include "visutils.h"
 #include <emscripten/fetch.h>
+#include <random>
 
 const int lsize = 40;
 
@@ -208,9 +209,31 @@ map<coord, coord> portals;
 bool placing_portal;
 coord portal_from(0, 0);
 
+int gameseed;
+
+std::mt19937 draw_rng;
+std::mt19937 shop_rng;
+std::mt19937 board_rng;
+
+int hrand(int i, std::mt19937& which = shop_rng) {
+  unsigned d = which() - which.min();
+  long long m = (long long) (which.max() - which.min()) + 1;
+  m /= i;
+  d /= m;
+  if(d < (unsigned) i) return d;
+  return hrand(i);
+  }
+
+vector<int> board_cache;
+
 int get_color(coord c) {
   if(!colors.count(c)) { 
-    int r = rand() % 25;
+    int ax = abs(c.x), ay = abs(c.y);
+    int index = (ax+ay) * (ax+ay) + ax;
+    index *= 4;
+    if(c.x > 0) index++; if(c.y > 0) index+=2;
+    while(board_cache.size() <= index) board_cache.push_back(hrand(25, board_rng));
+    int r = board_cache[index];
     if(r == 24) colors[c] = 1;
     else if(r == 22 || r == 23) colors[c] = 2;
     else colors[c] = 0;
@@ -885,6 +908,7 @@ void view_new_game() {
 
   if(roundindex > 1) {
     ss << "Your last game:<br/>";
+    ss << "Language: " << current->name << " seed: " << gameseed << "<br/>";
     ss << "Turn: " << roundindex << " total winnings: " << total_gain << " 🪙<br/><br/>";
     }
 
@@ -897,7 +921,10 @@ void view_new_game() {
     }
 
   ss << "<br/><br/>";
-  add_button(ss, "restart()", "restart");
+
+  ss << "Seed: <input id=\"seed\" length=10 type=text/><br/>";
+  ss << "<br/><br/>";
+  add_button(ss, "restart(document.getElementById(\"seed\").value)", "restart");
 
   ss << "</div></div>";
   set_value("output", ss.str());
@@ -910,7 +937,9 @@ void set_language(const char *s) {
   view_new_game();
   }
 
-void restart() {
+void restart(const char *s) {
+  if(!s[0]) gameseed = time(NULL);
+  else gameseed = atoi(s);
   current = next_language;
   init(false);
   }
@@ -921,7 +950,7 @@ void draw_tiles(int qty = 8) {
   for(int i=0; i < qty; i++) {
     if(deck.empty()) swap(deck, discard);
     if(deck.empty()) break;
-    int which = rand() % deck.size();
+    int which = hrand(deck.size(), draw_rng);
     drawn.emplace_back(std::move(deck[which]));
     deck[which] = std::move(deck.back());
     deck.pop_back();
@@ -931,7 +960,7 @@ void draw_tiles(int qty = 8) {
 sp basic_special() {
   int q = 0;
   while(q < 2) {
-    q = rand() % int(sp::first_artifact);
+    q = hrand(int(sp::first_artifact));
     }
   return sp(q);
   }
@@ -939,7 +968,7 @@ sp basic_special() {
 sp actual_basic_special() {
   int q = 0;
   while(q < 3) {
-    q = rand() % int(sp::first_artifact);
+    q = hrand(int(sp::first_artifact));
     }
   return sp(q);
   }
@@ -951,7 +980,7 @@ sp generate_artifact() {
   string artadj[10] = {"Ancient ", "Embroidered ", "Glowing ", "Shiny ", "Powerful ", "Forgotten ", "Demonic ", "Angelic ", "Great ", "Magical "};
   string artnoun[10] = {"Glyph", "Rune", "Letter", "Symbol", "Character", "Mark", "Figure", "Sign", "Scribble", "Doodle"};
   auto spec = sp(next);
-  gs.caption = artadj[rand() % 10] + artnoun[rand() % 10];
+  gs.caption = artadj[hrand(10)] + artnoun[hrand(10)];
   gs.background = rand() % 0x1000000; gs.background |= 0xFF000000;
   gs.text_color = 0xFF000000;
   if(!(gs.text_color & 0x800000)) gs.text_color |= 0xFF0000;
@@ -973,17 +1002,17 @@ void build_shop(int qty = 6) {
   for(auto& t: shop) add_to_log("ignored: "+short_desc(t)+ " for " + to_string(t.price));
   shop.clear();
   for(int i=0; i < qty; i++) {
-    string l = current->alphabet[rand() % current->alphabet.size()];
-    if(i == 0) l = "AEIOU" [rand() % 5];
+    string l = current->alphabet[hrand(current->alphabet.size())];
+    if(i == 0) l = "AEIOU" [hrand(5)];
     int val = 1;
     int max_price = get_max_price(roundindex);
     int min_price = get_min_price(roundindex);
-    int price = min_price + rand() % (max_price - min_price + 1);
-    while(rand() % 5 == 0) val++, price += 1 + rand() % roundindex;
+    int price = min_price + hrand(max_price - min_price + 1);
+    while(hrand(5) == 0) val++, price += 1 + hrand(roundindex);
     tile t(l, basic_special(), val);
     if(gsp(t).value) {
-      int d = rand() % (10 * roundindex);
-      if(d >= 200 && rand() % 100 < 50) {
+      int d = hrand(10 * roundindex);
+      if(d >= 200 && hrand(100) < 50) {
         t.special = generate_artifact();
         price *= 6;
         }
@@ -1087,7 +1116,11 @@ int init(bool _is_mobile) {
     string s0 = ""; s0 += c;
     board.emplace(coord{x++, 7}, tile{s0, sp::placed});
     }
-  srand(time(NULL));
+  shop_rng.seed(gameseed);
+  board_rng.seed(gameseed);
+  draw_rng.seed(gameseed);
+  board_cache.clear();
+  colors.clear();
   add_to_log("started SEUPHORICA");
   draw_tiles();
   build_shop();
@@ -1100,7 +1133,7 @@ int dist(coord a, coord b) {
   }
 
 extern "C" {
-  void start(bool mobile) { init(mobile); }
+  void start(bool mobile) { gameseed = time(NULL); init(mobile); }
   
   void back_from_board(int x, int y);
 
