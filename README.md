@@ -41,6 +41,7 @@ Dictionaries from:
 English: https://boardgames.stackexchange.com/questions/38366/latest-collins-scrabble-words-list-in-text-file (Collins)
 polski: https://sjp.pl (GPL 2 / Creative Commons Attribution 4.0 International)
 deutsch: https://github.com/enz/german-wordlist (CC-1.0)
-
+français: https://github.com/Thecoolsim/French-Scrabble-ODS8/blob/main/French%20ODS%20dictionary.txt
+español: https://github.com/kamilmielnik/scrabble-dictionaries/blob/master/spanish/fise-2.txt
 
 
