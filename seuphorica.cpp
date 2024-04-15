@@ -1020,7 +1020,7 @@ int init(bool _is_mobile);
 
 void set_language(const char *s) {
   for(auto l: languages) if(l->name == s) next_language = l;
-  view_new_game();
+  review_new_game();
   }
 
 void restart(const char *s, const char *poly) {
