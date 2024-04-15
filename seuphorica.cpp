@@ -29,9 +29,10 @@ struct language {
   string name;
   string gamename;
   string fname;
+  string flag;
   int offset, bytes;
   vector<string> alphabet;
-  language(const string& name, const string& gamename, const string& fname, const string& alph);
+  language(const string& name, const string& gamename, const string& fname, const string& alph, const string& flag);
   };
 
 int utf8_len(char ch) {
@@ -50,13 +51,13 @@ int utf8_length(const string& s) {
   return len;
   }
 
-language english("English", "SEUPHORICA", "wordlist.txt", "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-language polski("polski", "SEUFORIKA", "slowa.txt", "AĄBCĆDEĘFGHIJKLŁMNŃOÓPRSŚTUWYZŹŻ");
+language english("English", "SEUPHORICA", "wordlist.txt", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "🇬🇧");
+language polski("polski", "SEUFORIKA", "slowa.txt", "AĄBCĆDEĘFGHIJKLŁMNŃOÓPRSŚTUWYZŹŻ", "🇵🇱");
 language *current = &english;
 
 vector<language*> languages = {&english, &polski};
 
-language::language(const string& name, const string& gamename, const string& fname, const string& alph) : name(name), gamename(gamename), fname(fname) {
+language::language(const string& name, const string& gamename, const string& fname, const string& alph, const string& flag) : name(name), gamename(gamename), fname(fname), flag(flag) {
   int i = 0;
   while(i < alph.size()) {
     int len = utf8_len(alph[i]);
@@ -706,7 +707,9 @@ void draw_board() {
   ss << "<a onclick='view_help()'>view help</a>";
   ss << " - <a onclick='view_dictionary()'>dictionary</a>";
   ss << " - <a onclick='view_game_log()'>view game log</a>";
-  ss << " - <a onclick='view_new_game()'>start new game</a>";
+  ss << "<br/><a onclick='view_new_game()'>start new game ";
+  for(auto& l: languages) ss << l->flag;
+  ss << "</a>";
   ss << "</div></div>";
   ss << "</div>";
 
@@ -872,22 +875,43 @@ void view_dictionary() {
   set_value("output", ss.str());
   }
 
+language *next_language = current;
+
 void view_new_game() {
   stringstream ss;
 
   ss << "<div style=\"float:left;width:30%\">&nbsp;</div>";
   ss << "<div style=\"float:left;width:40%\">";
-  for(auto l: languages) {
-    ss << "<a onclick='start_in(\"" << l->name << "\")'>" << l->name << "</a><br/>";
+
+  if(roundindex > 1) {
+    ss << "Your last game:<br/>";
+    ss << "Turn: " << roundindex << " total winnings: " << total_gain << " 🪙<br/><br/>";
     }
+
+  ss << "<br/><br/>";
+
+  ss << "chosen language: " << next_language->name << "<br/>";
+
+  for(auto l: languages) {
+    add_button(ss, "set_language(\"" + l->name + "\")", l->name + " " + l->flag);
+    }
+
+  ss << "<br/><br/>";
+  add_button(ss, "restart()", "restart");
+
   ss << "</div></div>";
   set_value("output", ss.str());
   }
 
 int init(bool _is_mobile);
 
-void start_in(const char *s) {
-  for(auto l: languages) if(l->name == s) current = l;
+void set_language(const char *s) {
+  for(auto l: languages) if(l->name == s) next_language = l;
+  view_new_game();
+  }
+
+void restart() {
+  current = next_language;
   init(false);
   }
 
