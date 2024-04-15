@@ -880,7 +880,7 @@ void view_help() {
   ss << "<li>sum of the values of all tiles in the word</li>";
   ss << "<li>the multiplier (1 by default)</li></ul></li>";
   ss << "<li>after each move: <ul>";
-  ss << "<li>standard copies of the tiles are placed permanently on the board (only geometry-altering powers are kept)</li>";
+  ss << "<li>standard copies of the tiles are placed permanently on the board (only geometry-altering and foreign powers are kept)</li>";
   ss << "<li>tiles you have used are discarded</li>";
   ss << "<li>tiles you have not used have their value increased, and are discarded</li>";
   ss << "<li>you draw 8 new tiles from the bag (if bag is empty, discarded tiles go back to the bag), and the shop has a new selection of 5 items</li>";
@@ -1133,6 +1133,7 @@ void accept_move() {
     if(!other_end) for(int i=selftrash; i<copies_used; i++) discard.push_back(b);
     bool keep = false;
     for(sp x: {sp::bending, sp::portal, sp::reversing}) if(has_power(b, x)) keep = true;
+    if(get_language(b)) keep = true;
     if(!keep) keep = under_radiation(p);
     if(!keep)
       b.special = sp::placed;
