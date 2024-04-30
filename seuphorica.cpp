@@ -12,6 +12,8 @@
 
 const int lsize = 40;
 
+bool game_running;
+
 int next_id;
 int shop_id;
 
@@ -1001,13 +1003,14 @@ void review_new_game() {
   ss << "<div style=\"float:left;width:30%\">&nbsp;</div>";
   ss << "<div style=\"float:left;width:40%\">";
 
-  if(roundindex > 1) {
+  if(game_running) {
     ss << "Your last game:<br/>";
     ss << "Language: " << current->name;
     for(auto lang: polyglot_languages) ss << " + " << lang->name;
 
     ss << " seed: " << gameseed << "<br/>";
     ss << "Turn: " << roundindex << " total winnings: " << total_gain << " 🪙<br/><br/>";
+    ss << "<a onclick='back_to_game()'>back to game</a><br/><br/>";
     }
 
   ss << "<br/><br/>";
@@ -1050,7 +1053,7 @@ void view_new_game() {
   }
 
 
-int init(bool _is_mobile);
+void new_game();
 
 void set_language(const char *s) {
   for(auto l: languages) if(l->name == s) next_language = l;
@@ -1070,7 +1073,7 @@ void restart(const char *s, const char *poly) {
   for(char ch: spoly) if(ch >= 'a' && ch < 'a' + int(languages.size()))
     polyglot_languages.insert(languages[ch - 'a']);
   current = next_language;
-  init(false);
+  new_game();
   }
 
 }
@@ -1242,7 +1245,7 @@ void accept_move() {
   draw_board();
   }
 
-int init(bool _is_mobile) {
+void new_game() {
   deck = {};
   board = {};
   drawn = {};
@@ -1269,6 +1272,11 @@ int init(bool _is_mobile) {
   draw_tiles();
   build_shop();
   draw_board();
+  game_running = true;
+  }
+
+int init(bool _is_mobile) {
+  review_new_game();
   return 0;
   }
 
