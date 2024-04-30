@@ -20,14 +20,6 @@ int daily;
 int next_id;
 int shop_id;
 
-struct special {
-  string caption;
-  string desc;
-  int value;
-  unsigned background;
-  unsigned text_color;
-  };
-
 enum class language_state { not_fetched, fetch_started, fetch_progress, fetch_success, fetch_fail };
 
 struct language {
@@ -164,10 +156,62 @@ bool not_in_base(const string& letter) {
   return true;
   }
 
+bool eqcap(string a, string b) {
+  for(char& c: a) c = toupper(c);
+  for(char& c: b) c = toupper(c);
+  return a == b;
+  }
+
+struct polystring_base {
+  virtual string get() = 0;
+  virtual ~polystring_base() {}
+  virtual bool eqcap(const string& s) = 0;
+  };
+
+struct polyleaf : public polystring_base {
+  string b;
+  string get() { return b; }
+  polyleaf(const string& s) : b(s) {}
+  virtual bool eqcap(const string& s) { return ::eqcap(b, s); }
+  };
+
+struct polystring : shared_ptr<polystring_base> {
+  polystring() {}
+  polystring(const char* s) { ((shared_ptr<polystring_base>&)(*this)) = make_shared<polyleaf> (s); }
+  polystring(const string& s) { ((shared_ptr<polystring_base>&)(*this)) = make_shared<polyleaf> (s); }
+  operator string() { return ((const shared_ptr<polystring_base>&)(*this))->get(); }
+  };
+
+struct translation : public polystring_base {
+  language *l;
+  polystring in_l;
+  polystring not_in_l;
+  translation(language *l, polystring in_l, polystring not_in_l) : l(l), in_l(in_l), not_in_l(not_in_l) {}
+  string get() { return (((current == l) ? in_l : not_in_l)->get()); }
+  virtual bool eqcap(const string& s) { return in_l->eqcap(s) || not_in_l->eqcap(s); }
+  };
+
+struct halftrans {
+  language *l; polystring in_l;
+  halftrans(language *l, polystring in_l) : l(l), in_l(in_l) {}
+  };
+
+halftrans in_pl(polystring x) { return halftrans(&polski, x); }
+
+polystring operator + (const polystring& s, const halftrans& h) { polystring res; (shared_ptr<polystring_base>&)res = make_shared<translation> (h.l, h.in_l, s); return res; }
+
+struct special {
+  polystring caption;
+  string desc;
+  int value;
+  unsigned background;
+  unsigned text_color;
+  };
+
 vector<special> specials = {
   {"No Tile", "", 0, 0xFF000000, 0xFF000000}, 
   {"Placed", "", 0, 0xFFFFFFFF, 0xFF000000},   
-  {"Standard", "no special properties", 0, 0xFFFFFF80, 0xFF000000}, 
+  {"Standard" + in_pl("Standardowe"), "no special properties", 0, 0xFFFFFF80, 0xFF000000},
 
   /* premies */
 
@@ -858,7 +902,7 @@ void draw_board() {
     bool next = false;
     for(int i=0; i< (int) sp::first_artifact; i++) if(special_allowed[i]) {
       if(next) ss << ","; next = true;
-      ss << " " << specials[i].caption;
+      ss << " " << string(specials[i].caption);
       }
     ss << "<br/>";
     }
@@ -1072,7 +1116,7 @@ void review_new_game() {
     bool next = false;
     for(int i=0; i< (int) sp::first_artifact; i++) if(special_allowed[i]) {
       if(next) ss << ","; next = true;
-      ss << " " << specials[i].caption;
+      ss << " " << string(specials[i].caption);
       }
     ss << " seed: " << gameseed << "<br/>";
     ss << "Turn: " << roundindex << " total winnings: " << total_gain << " 🪙<br/><br/>";
@@ -1141,12 +1185,6 @@ bool bad_language(sp s) {
   return lang && !polyglot_languages.count(lang);
   }
 
-bool eqcap(string a, string b) {
-  for(char& c: a) c = toupper(c);
-  for(char& c: b) c = toupper(c);
-  return a == b;
-  }
-
 void restart(const char *s, const char *poly, const char *_restricted) {
   if(!s[0]) gameseed = time(NULL);
   else gameseed = atoi(s);
@@ -1170,12 +1208,15 @@ void restart(const char *s, const char *poly, const char *_restricted) {
     string cur;
     for(char c: restricted) {
       if(c == ',') {
-        for(int i=0; i<(int) sp::first_artifact; i++) if(eqcap(specials[i].caption, cur)) {
+        for(int i=0; i<(int) sp::first_artifact; i++) if(specials[i].caption->eqcap(cur)) {
           special_allowed[i] = false;
           chosen.push_back(i);
           }
-        for(int i=0; i<(int) sp::first_artifact; i++) if(eqcap("-" + specials[i].caption, cur)) {
-          special_allowed[i] = false;
+        if(cur[0] == "-") {
+          cur = cur.substr(1);
+          for(int i=0; i<(int) sp::first_artifact; i++) if(specials[i].caption->eqcap(cur)) {
+            special_allowed[i] = false;
+            }
           }
         int val = 0;
         for(char digit: cur) if(digit >= '0' && digit <= '9') { val *= 10; val += digit - '0'; }
