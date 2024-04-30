@@ -1329,8 +1329,58 @@ void new_game() {
   game_running = true;
   }
 
+char secleft[64];
+int daily;
+
+void check_daily_time() {
+  time_t t = time(NULL);
+  struct tm *res = localtime(&t);
+  int seconds_into = res->tm_hour * 3600 + res->tm_min * 60 + res->tm_sec;
+  res->tm_hour = 0;
+  res->tm_min = 0;
+  res->tm_sec = 0;
+  time_t t1 = mktime(res);
+  int daily = t1 / 3600 / 24 - 19842;
+  int seconds_left = 3600*24 - seconds_into;
+  sprintf(secleft, "%02d:%02d:%02d", seconds_left / 3600, (seconds_left / 60) % 60, seconds_left % 60);
+  }
+
+void view_intro() {
+  stringstream ss;
+
+  ss << "<div style=\"float:left;width:30%\">&nbsp;</div>";
+  ss << "<div style=\"float:left;width:40%\">";
+
+  check_daily_time();
+
+  for(auto l: languages) {
+    ss << "<h1>" << l->flag << " Welcome to Seuphorica!</h1>";
+
+    add_button(ss, "set_language(\"" + l->name + "\"); restart(\"\", \"\", \"\");", "standard game");
+    ss << "<br/><br/>";
+    ss << "All non-controversial special powers can appear in the game. Play as long as you can!<br/><br/>";
+
+    add_button(ss, "set_language(\"" + l->name + "\"); restart(\"" + to_string(daily) + "9\", \"D\", \"8\");", "daily game");
+    ss << "<br/><br/>";
+    ss << "Win as much 🪙 as you can in 20 turns! Only 8 randomly chosen special powers are available. ";
+    ss << "Everyone playing today gets the same tiles in shop! Great to compare with other players. ";
+    ss << "The current daily is #" << daily << ", time to the next one: " << secleft;
+    ss << "<br/><br/>";
+
+    add_button(ss, "set_language(\"" + l->name + "\"); view_new_game();", "custom game");
+    ss << "<br/><br/>";
+    ss << "More options.";
+    ss << "<br/><br/>";
+    }
+
+  ss << "</div></div>";
+  set_value("output", ss.str());
+  }
+
 int init(bool _is_mobile) {
-  review_new_game();
+  // next_language = current;
+  view_intro();
+  // review_new_game();
   return 0;
   }
 
