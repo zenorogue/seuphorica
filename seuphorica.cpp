@@ -13,6 +13,7 @@
 const int lsize = 40;
 
 int next_id;
+int shop_id;
 
 struct special {
   string caption;
@@ -156,7 +157,7 @@ vector<special> specials = {
 
   /* next-turn effects */
   {"Drawing", "%+d draw in the next round", 2, 0xFFFFC080, 0xFF000000},
-  {"Rich", "%+d shop choices in the next round", 5, 0xFFFFE500, 0xFF800000},
+  {"Rich", "%+d shop choices in the next round (makes tiles appear in the shop faster)", 5, 0xFFFFE500, 0xFF800000},
 
   /* other */
   {"Radiating", "8 adjacent tiles keep their special properties", 0, 0xFF004000, 0xFF80FF80},
@@ -244,6 +245,15 @@ int hrand(int i, std::mt19937& which = shop_rng) {
   d /= m;
   if(d < (unsigned) i) return d;
   return hrand(i);
+  }
+
+int hrand_once(int i, std::mt19937& which = shop_rng) {
+  unsigned d = which() - which.min();
+  long long m = (long long) (which.max() - which.min()) + 1;
+  m /= i;
+  d /= m;
+  if(d == i) return i-1;
+  return i;
   }
 
 vector<int> board_cache;
@@ -1136,11 +1146,11 @@ void build_shop(int qty = 6) {
     int val = 1;
     int max_price = get_max_price(roundindex);
     int min_price = get_min_price(roundindex);
-    int price = min_price + hrand(max_price - min_price + 1);
+    int price = min_price + hrand_once(max_price - min_price + 1);
     while(hrand(5) == 0) val++, price += 1 + hrand(roundindex);
     tile t(l, basic_special(), val);
     if(gsp(t).value) {
-      int d = hrand(10 * roundindex);
+      int d = hrand(10 * (1 + shop_id / 6));
       if(d >= 200 && hrand(100) < 50) {
         t.special = generate_artifact();
         price *= 6;
@@ -1152,6 +1162,7 @@ void build_shop(int qty = 6) {
     auto lang = get_language(t);
     if(lang && i) t.letter = lang->alphabet[hrand(lang->alphabet.size())];
     shop.push_back(t);
+    shop_id++;
     }
   }
 
@@ -1226,6 +1237,7 @@ void accept_move() {
   drawn = retained;
   draw_tiles(qdraw);
   just_placed.clear();
+  shop_id = 0;
   build_shop(qshop);
   draw_board();
   }
