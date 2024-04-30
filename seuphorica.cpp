@@ -202,6 +202,8 @@ polystring operator + (const polystring& s, const halftrans& h) { polystring res
 
 ostream& operator << (ostream& os, const polystring& s) { return os << s->get(); }
 
+polystring str_powers = "Powers:" + in_pl("Moce:");
+
 struct special {
   polystring caption;
   polystring desc;
@@ -869,6 +871,17 @@ void compute_score() {
   ev.current_scoring = scoring.str();
   };
 
+string power_list() {
+  stringstream ss;
+  ss << str_powers;
+  bool next = false;
+  for(int i=0; i< (int) sp::first_artifact; i++) if(special_allowed[i]) {
+    if(next) ss << ","; next = true;
+    ss << " " << specials[i].caption;
+    }
+  return ss.str();
+  }
+
 void draw_board() {
   pic p;
 
@@ -973,13 +986,7 @@ void draw_board() {
   ss << "<div style=\"float:left;width:20%\">";
   if(is_daily) ss << "DAILY #" << daily << "<br>";
   if(game_restricted) {
-    ss << "Powers:";
-    bool next = false;
-    for(int i=0; i< (int) sp::first_artifact; i++) if(special_allowed[i]) {
-      if(next) ss << ","; next = true;
-      ss << " " << specials[i].caption;
-      }
-    ss << "<br/>";
+    ss << power_list() << "<br/>";
     }
   ss << "Turn: " << roundindex << " total winnings: " << total_gain << " 🪙<br/>";
   if(roundindex > 20) ss << "Total winnings until Round 20: " << total_gain_20 << " 🪙<br/>";
@@ -1186,14 +1193,8 @@ void review_new_game() {
 
   if(game_running) {
     ss << "Your last game:<br/>";
-    ss << "Language: " << current->name;
-    ss << " powers:";
-    bool next = false;
-    for(int i=0; i< (int) sp::first_artifact; i++) if(special_allowed[i]) {
-      if(next) ss << ","; next = true;
-      ss << " " << specials[i].caption;
-      }
-    ss << " seed: " << gameseed << "<br/>";
+    ss << "Language: " << current->name << " seed: " << gameseed << "<br/>";
+    ss << power_list()  << "<br/>";
     ss << "Turn: " << roundindex << " total winnings: " << total_gain << " 🪙<br/><br/>";
     if(roundindex > 20) ss << "Total winnings until Round 20: " << total_gain_20 << " 🪙<br/>";
     ss << "<a onclick='back_to_game()'>back to game</a><br/><br/>";
@@ -1509,6 +1510,7 @@ void new_game() {
   board_cache.clear();
   colors.clear();
   add_to_log("started SEUPHORICA v13");
+  add_to_log(power_list());
   draw_tiles();
   build_shop();
   draw_board();
