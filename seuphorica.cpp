@@ -14,6 +14,8 @@ const int lsize = 40;
 
 bool game_running;
 bool game_restricted;
+bool is_daily;
+int daily;
 
 int next_id;
 int shop_id;
@@ -490,6 +492,7 @@ int cash = 80;
 
 int roundindex = 1;
 int total_gain = 0;
+int total_gain_20 = 0;
 
 int taxf(int r) {
   double rd = r - 1;
@@ -804,7 +807,18 @@ void draw_board() {
     }
   ss << "</div>";
   ss << "<div style=\"float:left;width:20%\">";
+  if(is_daily) ss << "DAILY #" << daily << "<br>";
+  if(game_restricted) {
+    ss << "Powers:";
+    bool next = false;
+    for(int i=0; i< (int) sp::first_artifact; i++) if(special_allowed[i]) {
+      if(next) ss << ","; next = true;
+      ss << " " << specials[i].caption;
+      }
+    ss << "<br/>";
+    }
   ss << "Turn: " << roundindex << " total winnings: " << total_gain << " 🪙<br/>";
+  if(roundindex > 20) ss << "Total winnings until Round 20: " << total_gain_20 << " 🪙<br/>";
   ss << ev.current_scoring << "<br/><br/>";
   if(ev.valid_move && just_placed.empty()) {
     add_button(ss, "play()", "skip turn!");
@@ -1009,10 +1023,15 @@ void review_new_game() {
   if(game_running) {
     ss << "Your last game:<br/>";
     ss << "Language: " << current->name;
-    for(auto lang: polyglot_languages) ss << " + " << lang->name;
-
+    ss << " powers:";
+    bool next = false;
+    for(int i=0; i< (int) sp::first_artifact; i++) if(special_allowed[i]) {
+      if(next) ss << ","; next = true;
+      ss << " " << specials[i].caption;
+      }
     ss << " seed: " << gameseed << "<br/>";
     ss << "Turn: " << roundindex << " total winnings: " << total_gain << " 🪙<br/><br/>";
+    if(roundindex > 20) ss << "Total winnings until Round 20: " << total_gain_20 << " 🪙<br/>";
     ss << "<a onclick='back_to_game()'>back to game</a><br/><br/>";
     }
 
@@ -1086,10 +1105,14 @@ bool eqcap(string a, string b) {
 void restart(const char *s, const char *poly, const char *_restricted) {
   if(!s[0]) gameseed = time(NULL);
   else gameseed = atoi(s);
+  is_daily = false;
   string spoly = poly;
   polyglot_languages = {};
-  for(char ch: spoly) if(ch >= 'a' && ch < 'a' + int(languages.size()))
-    polyglot_languages.insert(languages[ch - 'a']);
+  for(char ch: spoly) {
+    if(ch >= 'a' && ch < 'a' + int(languages.size()))
+      polyglot_languages.insert(languages[ch - 'a']);
+    if(ch == 'D') is_daily = true;
+    }
   for(int i=0; i < (int) sp::first_artifact; i++) {
     special_allowed[i] = (i >= 2) && !bad_language(sp(i));
     }
@@ -1236,6 +1259,7 @@ void accept_move() {
   int tax_paid = tax();
   cash += ev.total_score - tax();
   total_gain += ev.total_score;
+  if(roundindex <= 20) total_gain_20 = total_gain;
   roundindex++;
   int qdraw = 8, qshop = 6, teach = 1, copies_unused = 1, copies_used = 1;
   int retain = 0;
@@ -1330,7 +1354,6 @@ void new_game() {
   }
 
 char secleft[64];
-int daily;
 
 void check_daily_time() {
   time_t t = time(NULL);
