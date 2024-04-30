@@ -1285,7 +1285,7 @@ void restart(const char *s, const char *poly, const char *_restricted) {
           special_allowed[i] = false;
           chosen.push_back(i);
           }
-        if(cur[0] == "-") {
+        if(cur.size() && cur[0] == '-') {
           cur = cur.substr(1);
           for(int i=0; i<(int) sp::first_artifact; i++) if(specials[i].caption->eqcap(cur)) {
             special_allowed[i] = false;
