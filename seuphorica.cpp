@@ -1341,12 +1341,13 @@ void new_game() {
     string s0 = ""; s0 += c;
     board.emplace(coord{x++, 7}, tile{s0, sp::placed});
     }
+
   shop_rng.seed(gameseed);
   board_rng.seed(gameseed);
   draw_rng.seed(gameseed);
   board_cache.clear();
   colors.clear();
-  add_to_log("started SEUPHORICA");
+  add_to_log("started SEUPHORICA v13");
   draw_tiles();
   build_shop();
   draw_board();
