@@ -202,7 +202,7 @@ polystring operator + (const polystring& s, const halftrans& h) { polystring res
 
 struct special {
   polystring caption;
-  string desc;
+  polystring desc;
   int value;
   unsigned background;
   unsigned text_color;
@@ -211,43 +211,116 @@ struct special {
 vector<special> specials = {
   {"No Tile", "", 0, 0xFF000000, 0xFF000000}, 
   {"Placed", "", 0, 0xFFFFFFFF, 0xFF000000},   
-  {"Standard" + in_pl("Standardowe"), "no special properties", 0, 0xFFFFFF80, 0xFF000000},
+  {"Standard" + in_pl("Standardowe"), 
+   "no special properties" + in_pl("bez specjalnych własności"),
+    0, 0xFFFFFF80, 0xFF000000},
 
   /* premies */
 
-  {"Premium", "%+d multiplier when used", 1, 0xFFFF8080, 0xFF000000},
-  {"Horizontal", "%+d multiplier when used horizontally", 2, 0xFFFF80C0, 0xFF000000},
-  {"Vertical", "%+d multiplier when used vertically", 2, 0xFFFF80C0, 0xFF000000},
-  {"Initial", "%+d multiplier when this is the first letter of the word", 3, 0xFFFFFFFF, 0xFF808080},
-  {"Final", "%+d multiplier when this is the last letter of the word", 3, 0xFFFFFFFF, 0xFF808080},
-  {"Red", "%+d multiplier when put on a red square", 4, 0xFFFF2020, 0xFFFFFFFF},
-  {"Blue", "%+d multiplier when put on a blue square", 3, 0xFF2020FF, 0xFFFFFFFF},
+  {"Premium" + in_pl("Premiowe"),
+   "%+d multiplier when used" + in_pl("mnożnik %+d"), 
+   1, 0xFFFF8080, 0xFF000000},
+
+  {"Horizontal" + in_pl("Poziome"),
+   "%+d multiplier when used horizontally" + in_pl("mnożnik %+d jeśli poziomo"),
+   2, 0xFFFF80C0, 0xFF000000},
+
+  {"Vertical" + in_pl("Pionowe"),
+   "%+d multiplier when used vertically" + in_pl("mnożnik %+d jeśli pionowo"),
+   2, 0xFFFF80C0, 0xFF000000},
+
+  {"Initial" + in_pl("Początkowe"),
+   "%+d multiplier when this is the first letter of the word" + in_pl("mnożnik %+d jeśli pierwsza litera w słowie"),
+   3, 0xFFFFFFFF, 0xFF808080},
+
+  {"Final" + in_pl("Końcowe"),
+   "%+d multiplier when this is the last letter of the word" + in_pl("mnożnik %+d jeśli ostatnia litera w słowie"),
+   3, 0xFFFFFFFF, 0xFF808080},
+
+  {"Red" + in_pl("Czerwone"),
+   "%+d multiplier when put on a red square" + in_pl("mnożnik %+d jeśli położone na czerwonym polu"),
+   4, 0xFFFF2020, 0xFFFFFFFF},
+
+  {"Blue" + in_pl("Niebieskie"),
+   "%+d multiplier when put on a blue square" + in_pl("mnożnik %+d jeśli położone na niebieskim polu"),
+   3, 0xFF2020FF, 0xFFFFFFFF},
 
   /* placement */
-  {"Flying", "exempt from the rule that all tiles must be in a single word", 0, 0xFF8080FF, 0xFFFFFFFF},
-  {"Mirror", "words going across go down after this letter, and vice versa; %+d multiplier when tiles on all 4 adjacent cells", 3, 0xFF303030, 0xFF4040FF},
-  {"Reversing", "words are accepted when written in reverse; if both valid, both score", 0, 0xFF404000, 0xFFFFFF80},
+
+  {"Flying" + in_pl("Latające"),
+   "exempt from the rule that all tiles must be in a single word" + in_pl("ignoruje regułę, że wszystkie płytki muszą być w jednym słowie"),
+   0, 0xFF8080FF, 0xFFFFFFFF},
+
+  {"Mirror" + in_pl("Lustrzane"),
+   "words going across go down after this letter, and vice versa; %+d multiplier when tiles on all 4 adjacent cells"
+   + in_pl("słowa poziomo idą pionowo po tej literze, i odwrotnie; mnożnik %+d jeśli są płytki na wszystkich 4 sąsiednich polach"), 
+   3, 0xFF303030, 0xFF4040FF},
+
+  {"Reversing" + in_pl("Odwracające"),
+   "words are accepted when written in reverse; if both valid, both score"
+   + in_pl("słowa pisane od tyłu są akceptowane; jeśli oba kierunki są poprawne, dostajemy punkty za oba"),
+   0, 0xFF404000, 0xFFFFFF80},
 
   /* unused-tile effects */
-  {"Teacher", "if used, %+d value to all the unused tiles", 1, 0xFFFF40FF, 0xFF000000},
-  {"Trasher", "all discarded unused tiles, as well as this, are premanently deleted", 0, 0xFF000000, 0xFF808080},
-  {"Trasher+", "all discarded unused tiles are premanently deleted", 0, 0xFF000000, 0xFFFFFFFF},
-  {"Duplicator", "%+d copies of all used tiles (but this one is deleted)", 1, 0xFFFF40FF, 0xFF00C000},
-  {"Retain", "%d first unused tiles are retained for the next turn", 2, 0xFF905000, 0xFFFFFFFF},
+  {"Teacher" + in_pl("Uczące"),
+   "if used, %+d value to all the unused tiles" + in_pl("jeśli użyte, wartość %+d dla wszystkich nieużytych płytek"),
+   1, 0xFFFF40FF, 0xFF000000},
+
+  {"Trasher" + in_pl("Śmieciowe"),
+   "all discarded unused tiles, as well as this, are premanently deleted" + in_pl("wszystkie odrzucone nieużyte płytki, a także ta płytka, są trwale usunięte"),
+   0, 0xFF000000, 0xFF808080},
+
+  {"Trasher+" + in_pl("Śmieciowe+"),
+   "all discarded unused tiles are premanently deleted" + in_pl("wszystkie odrzucone nieużyte płytki są trwale usunięte"),
+   0, 0xFF000000, 0xFFFFFFFF},
+
+  {"Duplicator" + in_pl("Podwajające"),
+   "%+d copies of all used tiles (but this one is deleted)" + in_pl("%+d kopie wszystkich użytych płytek (ale ta płytka jest usuwana)"),
+   1, 0xFFFF40FF, 0xFF00C000},
+
+  {"Retain" + in_pl("Zatrzymujące"),
+   "%d first unused tiles are retained for the next turn" + in_pl("%d pierwszych nieużytych płytek przechodzi do kolejnej tury"),
+   2, 0xFF905000, 0xFFFFFFFF},
 
   /* next-turn effects */
-  {"Drawing", "%+d draw in the next round", 2, 0xFFFFC080, 0xFF000000},
-  {"Rich", "%+d shop choices in the next round (makes tiles appear in the shop faster)", 5, 0xFFFFE500, 0xFF800000},
+  {"Drawing" + in_pl("Ciągnące"),
+   "%+d draw in the next round" + in_pl("%+d płytek dobieranych w kolejnej rundzie"),
+   2, 0xFFFFC080, 0xFF000000},
+
+  {"Rich" + in_pl("Bogate"),
+   "%+d shop choices in the next round (makes tiles appear in the shop faster)"
+   + in_pl("%+d płytek w sklepie w kolejnej rundzie (płytki pojawiają się w sklepie szybciej)"),
+   5, 0xFFFFE500, 0xFF800000},
 
   /* other */
-  {"Radiating", "8 adjacent tiles keep their special properties", 0, 0xFF004000, 0xFF80FF80},
-  {"Tricky", "all valid subwords including this letter are taken into account for scoring (each counting just once)", 0, 0xFF808040, 0xFFFFFF80},
-  {"Soothing", "every failed multiplier tile becomes %+d multiplier (does not stack)", 1, 0xFF80FF80, 0xFF008000},
-  {"Wild", "you can rewrite the letter while it is in your hand, but it resets the value to 0", 0, 0xFF800000, 0xFFFF8000},
-  {"Portal", "placed in two locations; teleports between them (max distance %d)", 6, 0xFF000080, 0xFFFFFFFF},
+  {"Radiating" + in_pl("Promieniujące"),
+   "8 adjacent tiles keep their special properties" + in_pl("8 sąsidenich płytek zachowuje swoje moce"),
+   0, 0xFF004000, 0xFF80FF80},
+
+  {"Tricky" + in_pl("Trikowe"),
+   "all valid subwords including this letter are taken into account for scoring (each counting just once)"
+   + in_pl("wszystkie prawidłowe podsłowa zawierające tą płytkę są brane pod uwagę w punktacji (każde słowo tylko raz)"),
+   0, 0xFF808040, 0xFFFFFF80},
+
+  {"Soothing" + in_pl("Kojące"),
+   "every failed multiplier tile becomes %+d multiplier (does not stack)"
+   + in_pl("każda nieudana płytka mnożnikowa zostaje mnożnikiem %+d (nie kumuluje się)"),
+   1, 0xFF80FF80, 0xFF008000},
+
+  {"Wild" + in_pl("Dzikie"),
+   "you can rewrite the letter while it is in your hand, but it resets the value to 0"
+   + in_pl("możesz przepisać literę, gdy ta płytka jest w Twojej ręce, ale to resetuje wartość do 0"),
+   0, 0xFF800000, 0xFFFF8000},
+
+  {"Portal" + in_pl("Portalowe"),
+   "placed in two locations; teleports between them (max distance %d)"
+   + in_pl("kładzione w dwóch miejscach; teleportuje między nimi (maks odległość %d)"),
+   6, 0xFF000080, 0xFFFFFFFF},
 
   /* controversial */
-  {"Naughty", "%+d multiplier when used in a naughty word", 5, 0xFF303030, 0xFFFFC0CB},
+  {"Naughty" + in_pl("Niegrzeczne"),
+   "%+d multiplier when used in a naughty word" + in_pl("mnożnik %+d gdy użyte w niegrzecznym słowie"),
+   5, 0xFF303030, 0xFFFFC0CB},
 
   /* language */
   {"English", "words in English are accepted. Score twice if valid in both languages. %+d if this letter is not in basic language", 3, 0xFFFFFF80, 0xFF000000},
@@ -377,7 +450,7 @@ special &gsp(const tile &t) {
 
 string power_description(const special& s, int rarity) {
   char buf[127];
-  sprintf(buf, s.desc.c_str(), s.value * rarity);
+  sprintf(buf, s.desc->get().c_str(), s.value * rarity);
   return buf;
   }
 
