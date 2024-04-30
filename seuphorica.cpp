@@ -33,6 +33,7 @@ enum class language_state { not_fetched, fetch_started, fetch_progress, fetch_su
 struct language {
   language_state state;
   map<int, set<string>> dictionary;
+  set<string> naughty;
   string name;
   string gamename;
   string fname;
@@ -96,6 +97,19 @@ void downloadSucceeded(emscripten_fetch_t *fetch) {
   draw_board();
   }
 
+void downloadSucceeded_naughty(emscripten_fetch_t *fetch) {
+  language& l = *((language*) fetch->userData);
+  string s;
+  for(int i=0; i<fetch->numBytes; i++) {
+    char ch = fetch->data[i];
+    if(ch == 10) { l.naughty.insert(s); s = ""; }
+    else s += ch;
+    }
+  l.state = language_state::fetch_success;
+  emscripten_fetch_close(fetch);
+  draw_board();
+  }
+
 void downloadFailed(emscripten_fetch_t *fetch) {
   language& l = *((language*) fetch->userData);
   l.state = language_state::fetch_fail;
@@ -124,8 +138,25 @@ void read_dictionary(language& l) {
   emscripten_fetch(&attr, l.fname.c_str());
   }
 
+void read_naughty_dictionary(language& l) {
+  emscripten_fetch_attr_t attr;
+  emscripten_fetch_attr_init(&attr);
+  strcpy(attr.requestMethod, "GET");
+  attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY | EMSCRIPTEN_FETCH_PERSIST_FILE;
+  attr.userData = &l;
+  attr.onsuccess = downloadSucceeded_naughty;
+  attr.onerror = downloadFailed;
+  attr.onprogress = downloadProgress;
+  l.state = language_state::fetch_started;
+  emscripten_fetch(&attr, ("naughty-" + l.fname).c_str());
+  }
+
 bool ok(const string& word, int len, language* cur) {
   return cur->dictionary[len].count(word);
+  }
+
+bool is_naughty(const string& word, language* cur) {
+  return cur->naughty.count(word);
   }
 
 bool not_in_base(const string& letter) {
@@ -171,6 +202,9 @@ vector<special> specials = {
   {"Wild", "you can rewrite the letter while it is in your hand, but it resets the value to 0", 0, 0xFF800000, 0xFFFF8000},
   {"Portal", "placed in two locations; teleports between them (max distance %d)", 6, 0xFF000080, 0xFFFFFFFF},
 
+  /* controversial */
+  {"Naughty", "%+d multiplier when used in a naughty word", 5, 0xFF303030, 0xFFFFC0CB},
+
   /* language */
   {"English", "words in English are accepted. Score twice if valid in both languages. %+d if this letter is not in basic language", 3, 0xFFFFFF80, 0xFF000000},
   {"Deutsch", "Wörter in deutscher Sprache werden akzeptiert. Bei Gültigkeit in beiden Sprachen doppelt punkten. %+d, wenn dieser Buchstabe nicht in der Basissprache vorliegt", 3, 0xFF400000, 0xFFFFFFFF},
@@ -187,6 +221,8 @@ enum class sp {
   teacher, trasher, multitrasher, duplicator, retain,
   drawing, rich,
   radiating, tricky, soothing, wild, portal,
+
+  naughty,
 
   english, deutsch, francais, espanol, polski,
 
@@ -547,6 +583,13 @@ void compute_score() {
       ev.valid_move = false;
       return;
       }
+
+    if(lang->state == language_state::fetch_success && lang->naughty.empty()) {
+      read_naughty_dictionary(*lang);
+      ev.current_scoring = "Downloading the naughty dictionary...";
+      ev.valid_move = false;
+      return;
+      }
     }
 
   if(placing_portal) { ev.current_scoring = "You must finish placing the portal";  ev.valid_move = false; return; }
@@ -609,6 +652,7 @@ void compute_score() {
     int rmul = 1;
     int qsooth = 0;
     int sooth = 0, rsooth = 0;
+    int naughtymul = 0, naughtysooth = 0;
     set<language*> polyglot = { current };
     string rword;
 
@@ -639,6 +683,7 @@ void compute_score() {
       if(has_power(b, sp::premium, val)) affect_mul(true);
       if(has_power(b, sp::horizontal, val)) affect_mul(next.x);
       if(has_power(b, sp::vertical, val)) affect_mul(next.y);
+      if(has_power(b, sp::naughty, val)) { naughtymul += val; naughtysooth++; }
       if(has_power(b, sp::red, val)) affect_mul(get_color(at) == 1);
       if(has_power(b, sp::blue, val)) affect_mul(get_color(at) == 2);
       if(has_power(b, sp::initial, val)) { affect_mul(index == 0, 1); }
@@ -658,7 +703,7 @@ void compute_score() {
           auto& nword = rd ? rword : word;
           auto& nmul = rd ? rmul : mul;
           if(ok(word, index, l)) {
-            int mul1 = nmul + qsooth * sooth;
+            int mul1 = nmul + qsooth * sooth + (is_naughty(word, l) ? naughtymul : naughtysooth * sooth);
             scoring << "<b>" << nword << ":</b> " << placed << "*" << all << "*" << mul1 << " = " << placed*all*mul1;
             if(l != current) scoring << " " << l->flag;
             scoring << "<br/>";
@@ -674,8 +719,8 @@ void compute_score() {
     for(int rd=0; rd<directions; rd++) for(auto l: polyglot) {
       auto& nword = rd ? rword : word;
       auto& nmul = rd ? rmul : mul;
-      int mul1 = nmul + qsooth * sooth;
       if(ok(nword, index, l)) {
+        int mul1 = nmul + qsooth * sooth + (is_naughty(word, l) ? naughtymul : naughtysooth * sooth);
         is_legal = true;
         scoring << "<b>" << nword << ":</b> " << placed << "*" << all << "*" << mul1 << " = " << placed*all*mul1;
         if(l != current) scoring << " " << l->flag;
@@ -1114,7 +1159,7 @@ void restart(const char *s, const char *poly, const char *_restricted) {
     if(ch == 'D') is_daily = true;
     }
   for(int i=0; i < (int) sp::first_artifact; i++) {
-    special_allowed[i] = (i >= 2) && !bad_language(sp(i));
+    special_allowed[i] = (i >= 2) && (i != (int) sp::naughty) && !bad_language(sp(i));
     }
   string restricted = _restricted;
   std::mt19937 restrict_rng(gameseed);
