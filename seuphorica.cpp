@@ -13,6 +13,7 @@
 const int lsize = 40;
 
 bool game_running;
+bool game_restricted;
 
 int next_id;
 int shop_id;
@@ -189,6 +190,8 @@ enum class sp {
 
   first_artifact
   };
+
+array<bool, (int) sp::first_artifact> special_allowed;
 
 stringstream game_log;
 
@@ -1026,6 +1029,10 @@ void review_new_game() {
   ss << "Seed: <input id=\"seed\" length=10 type=text/><br/>";
   ss << "<br/><br/>";
 
+  ss << "Restricted specials: <input id=\"restricted\" length=10 type=text/><br/>";
+  ss << "Examples: <b>8</b> to allow only 8 random special powers; <b>Retain,7</b> to allow only Retain and 7 other special powers; <b>-red,3</b> to allow 3 special powers other than Red; <b>-blue,99</b> to allow all special powers other than Blue<br/>";
+  ss << "<br/><br/>";
+
   string pres;
 
   ss << "Special letters can change the language to:<br>";
@@ -1041,7 +1048,7 @@ void review_new_game() {
     }
 
   ss << "<br/><br/>";
-  add_button(ss, "poly = \"\"; " + pres + "restart(document.getElementById(\"seed\").value, poly)", "restart");
+  add_button(ss, "poly = \"\"; " + pres + "restart(document.getElementById(\"seed\").value, poly, document.getElementById(\"restricted\").value)", "restart");
 
   ss << "</div></div>";
   set_value("output", ss.str());
@@ -1065,13 +1072,65 @@ void set_language_dic(const char *s) {
   update_dictionary(dictionary_checked);
   }
 
-void restart(const char *s, const char *poly) {
+bool bad_language(sp s) {
+  auto lang = get_language(s);
+  return lang && !polyglot_languages.count(lang);
+  }
+
+bool eqcap(string a, string b) {
+  for(char& c: a) c = toupper(c);
+  for(char& c: b) c = toupper(c);
+  return a == b;
+  }
+
+void restart(const char *s, const char *poly, const char *_restricted) {
   if(!s[0]) gameseed = time(NULL);
   else gameseed = atoi(s);
   string spoly = poly;
   polyglot_languages = {};
   for(char ch: spoly) if(ch >= 'a' && ch < 'a' + int(languages.size()))
     polyglot_languages.insert(languages[ch - 'a']);
+  for(int i=0; i < (int) sp::first_artifact; i++) {
+    special_allowed[i] = (i >= 2) && !bad_language(sp(i));
+    }
+  string restricted = _restricted;
+  std::mt19937 restrict_rng(gameseed);
+  game_restricted = (restricted != "");
+  if(game_restricted) {
+    vector<int> chosen;
+    restricted += ",";
+    string cur;
+    for(char c: restricted) {
+      if(c == ',') {
+        for(int i=0; i<(int) sp::first_artifact; i++) if(eqcap(specials[i].caption, cur)) {
+          special_allowed[i] = false;
+          chosen.push_back(i);
+          }
+        for(int i=0; i<(int) sp::first_artifact; i++) if(eqcap("-" + specials[i].caption, cur)) {
+          special_allowed[i] = false;
+          }
+        int val = 0;
+        for(char digit: cur) if(digit >= '0' && digit <= '9') { val *= 10; val += digit - '0'; }
+        for(int i=0; i<val; i++) {
+          for(int j=0; j<1000; j++) {
+            int r = hrand((int) sp::first_artifact, restrict_rng);
+            if(special_allowed[r]) {
+              special_allowed[r] = false; chosen.push_back(r); break;
+              }
+            }
+          }
+        cur = "";
+        }
+      else cur += c;
+      }
+    if(chosen.empty()) {
+      game_restricted = false;
+      }
+    if(game_restricted) {
+      for(int i=0; i<(int) sp::first_artifact; i++) special_allowed[i] = false;
+      for(int i: chosen) special_allowed[i] = true;
+      }
+    }
   current = next_language;
   new_game();
   }
@@ -1089,16 +1148,11 @@ void draw_tiles(int qty = 8) {
     }
   }
 
-bool bad_language(sp s) {
-  auto lang = get_language(s);
-  return lang && !polyglot_languages.count(lang);
-  }
-
 sp basic_special() {
   while(true) {
     int q = hrand(int(sp::first_artifact));
     if(q < 2) continue;
-    if(bad_language(sp(q))) continue;
+    if(!special_allowed[q]) continue;
     return sp(q);
     }
   }
@@ -1107,7 +1161,7 @@ sp actual_basic_special() {
   while(true) {
     int q = hrand(int(sp::first_artifact));
     if(q < 3) continue;
-    if(bad_language(sp(q))) continue;
+    if(!special_allowed[q]) continue;
     return sp(q);
     }
   }

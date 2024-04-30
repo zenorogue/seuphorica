@@ -205,7 +205,7 @@
       function view_new_game() { Module.ccall('view_new_game', 'null', [], []) }
       function set_language(s) { Module.ccall('set_language', 'null', ['string'], [s]) }
       function set_language_dic(s) { Module.ccall('set_language_dic', 'null', ['string'], [s]) }
-      function restart(seed, poly) { Module.ccall('restart', 'null', ['string', 'string'], [seed, poly]) }
+      function restart(seed, poly, restricted) { Module.ccall('restart', 'null', ['string', 'string', 'string'], [seed, poly, restricted]) }
       Module.postRun = [doit]
       </script>
 
