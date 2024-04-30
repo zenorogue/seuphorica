@@ -200,6 +200,8 @@ halftrans in_pl(polystring x) { return halftrans(&polski, x); }
 
 polystring operator + (const polystring& s, const halftrans& h) { polystring res; (shared_ptr<polystring_base>&)res = make_shared<translation> (h.l, h.in_l, s); return res; }
 
+ostream& operator << (ostream& os, const polystring& s) { return os << s->get(); }
+
 struct special {
   polystring caption;
   polystring desc;
@@ -975,7 +977,7 @@ void draw_board() {
     bool next = false;
     for(int i=0; i< (int) sp::first_artifact; i++) if(special_allowed[i]) {
       if(next) ss << ","; next = true;
-      ss << " " << string(specials[i].caption);
+      ss << " " << specials[i].caption;
       }
     ss << "<br/>";
     }
@@ -1189,7 +1191,7 @@ void review_new_game() {
     bool next = false;
     for(int i=0; i< (int) sp::first_artifact; i++) if(special_allowed[i]) {
       if(next) ss << ","; next = true;
-      ss << " " << string(specials[i].caption);
+      ss << " " << specials[i].caption;
       }
     ss << " seed: " << gameseed << "<br/>";
     ss << "Turn: " << roundindex << " total winnings: " << total_gain << " 🪙<br/><br/>";
