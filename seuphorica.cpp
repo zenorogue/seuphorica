@@ -203,6 +203,34 @@ polystring operator + (const polystring& s, const halftrans& h) { polystring res
 ostream& operator << (ostream& os, const polystring& s) { return os << s->get(); }
 
 polystring str_powers = "Powers:" + in_pl("Moce:");
+polystring str_rare = "Rare" + in_pl("Rzadkie");
+polystring str_epic = "Epic" + in_pl("Epickie");
+polystring str_tiles_in_hand = "Tiles in hand:" + in_pl("Płytki w ręce:");
+polystring str_discard = "discard:" + in_pl("odrzucone:");
+polystring str_bag= "bag:" + in_pl("worek:");
+polystring str_shop_you_have = "Shop: (you have " + in_pl("Sklep: (masz ");
+polystring str_cancel_the_purchase = "cancel the purchase" + in_pl("anuluj zakup");
+polystring str_turn = "Turn" + in_pl("Runda");
+polystring str_total_winnings = "total winnings" + in_pl("łączne wygrane");
+polystring str_total_winnings_20 =  "Total winnings until Round 20" + in_pl("łączne wygrane do rundy 20");
+polystring str_you_must_finish = "You must finish placing the portal" + in_pl("musisz skończyć ustawiać portal");
+polystring str_downloading = "Downloading the dictionary..." + in_pl("Ściągam słownik...");
+polystring str_downloading_naughty = "Downloading the naughty dictionary..." + in_pl("Ściągam niegrzeczny słownik...");
+polystring str_download_failed = "Failed to download the dictionary!" + in_pl("Nie udało się ściągnąć słownika!");
+polystring str_daily = "DAILY" + in_pl("CODZIENNA");
+polystring str_play = "play!" + in_pl("graj!");
+polystring str_skip_turn = "skip turn!" + in_pl("opuść kolejkę!");
+polystring str_view_help = "help" + in_pl("pomoc");
+polystring str_dictionary = "dictionary" + in_pl("słownik");
+polystring str_game_log = "game log" + in_pl("log gry");
+polystring str_new_game = "new game" + in_pl("nowa gra");
+polystring str_back_to_game = "back to game" + in_pl("powrót do gry");
+polystring str_letter = "letter" + in_pl("litera");
+polystring str_value = "value" + in_pl("wartość");
+polystring str_special = "special" + in_pl("moc");
+polystring str_rarity = "rarity" + in_pl("rzadkość");
+polystring str_reverse = "reverse" + in_pl("odwróć");
+polystring str_sort_by = "sort by" + in_pl("sortowanie:");
 
 struct special {
   polystring caption;
@@ -494,9 +522,9 @@ string tile_desc(const tile& t) {
   else if(t.rarity == 1)
     out = "<b>" + cap + ": </b>";
   else if(t.rarity == 2)
-    out = "<b><font color='#4040FF'>Rare " + cap + ": </font></b>";
+    out = "<b><font color='#4040FF'>" + string(str_rare) + " " + cap + ": </font></b>";
   else if(t.rarity == 3)
-    out = "<b><font color='#FF40FF'>Epic " + cap + ": </font></b>";
+    out = "<b><font color='#FF40FF'>" + string(str_epic) + " " + cap + ": </font></b>";
   out += power_description(t);
   if(t.price) out += " (" + to_string(t.price) + " 🪙)";
   return out;
@@ -684,7 +712,7 @@ void compute_score() {
       read_dictionary(*lang);
       }
     if(lang->state == language_state::fetch_started) {
-      ev.current_scoring = "Downloading the dictionary...";
+      ev.current_scoring = str_downloading;
       ev.valid_move = false;
       return;
       }
@@ -693,27 +721,27 @@ void compute_score() {
       double pct = lang->offset * 1. / bytes;
       char buf[64];
       snprintf(buf, 64, "%4.1f%% of %.1f MiB", pct * 100, bytes / 1048576.);
-      ev.current_scoring = "Downloading the dictionary... ";
+      ev.current_scoring = str_downloading;
       ev.current_scoring += buf;
       ev.valid_move = false;
       return;
       }
 
     if(lang->state == language_state::fetch_fail) {
-      ev.current_scoring = "Failed to download the dictionary!";
+      ev.current_scoring = str_download_failed;
       ev.valid_move = false;
       return;
       }
 
     if(lang->state == language_state::fetch_success && lang->naughty.empty()) {
       read_naughty_dictionary(*lang);
-      ev.current_scoring = "Downloading the naughty dictionary...";
+      ev.current_scoring = str_downloading_naughty;
       ev.valid_move = false;
       return;
       }
     }
 
-  if(placing_portal) { ev.current_scoring = "You must finish placing the portal";  ev.valid_move = false; return; }
+  if(placing_portal) { ev.current_scoring = str_you_must_finish;  ev.valid_move = false; return; }
 
   set<pair<coord, coord>> starts;
 
@@ -945,7 +973,7 @@ void draw_board() {
   ss << "<div style=\"float:left;width:20%\">&nbsp;</div>";
   ss << "<div style=\"float:left;width:20%\">";
 
-  ss << "<b>Tiles in hand: </b>(<a onclick='check_discard()'>discard: " << discard.size() << " bag: " << deck.size() << "</a>)<br/>";
+  ss << "<b>" << str_tiles_in_hand << " </b>(<a onclick='check_discard()'>" << str_discard << " " << discard.size() << " " << str_bag << " " << deck.size() << "</a>)<br/>";
 
   int id = 0;
   for(auto& t: drawn) {
@@ -965,7 +993,7 @@ void draw_board() {
   ss << "</div>";
 
   ss << "<div style=\"float:left;width:20%\">";
-  ss << "<b>Shop: (you have " << cash << " 🪙)</b><br/>";
+  ss << "<b>" << str_shop_you_have << cash << " 🪙)</b><br/>";
 
   id = 0;
   for(auto& t: shop) {
@@ -980,32 +1008,31 @@ void draw_board() {
   if(drawn.size() && drawn[0].price) {
     pic p;
     render_tile(p, 0, 0, empty_tile, " onclick='back_to_shop()'");
-    ss << SVG_to_string(p) << " cancel the purchase<br/>";
+    ss << SVG_to_string(p) << " " << str_cancel_the_purchase << "<br/>";
     }
   ss << "</div>";
   ss << "<div style=\"float:left;width:20%\">";
-  if(is_daily) ss << "DAILY #" << daily << "<br>";
+
+  if(is_daily) ss << str_daily << " #" << daily << "<br>";
   if(game_restricted) {
     ss << power_list() << "<br/>";
     }
-  ss << "Turn: " << roundindex << " total winnings: " << total_gain << " 🪙<br/>";
-  if(roundindex > 20) ss << "Total winnings until Round 20: " << total_gain_20 << " 🪙<br/>";
+  ss << str_turn << ": " << roundindex << " " << str_total_winnings << ": " << total_gain << " 🪙<br/>";
+  if(roundindex > 20) ss << str_total_winnings_20 << ": " << total_gain_20 << " 🪙<br/>";
   ss << ev.current_scoring << "<br/><br/>";
   if(ev.valid_move && just_placed.empty()) {
-    add_button(ss, "play()", "skip turn!");
+    add_button(ss, "play()", str_skip_turn);
     ss << "<br/>";
     }
   else if(ev.valid_move) {
-    add_button(ss, "play()", "play!");
+    add_button(ss, "play()", str_play);
     ss << "<br/>";
     }
   ss << "<hr/>";
-  ss << "<a onclick='view_help()'>view help</a>";
-  ss << " - <a onclick='view_dictionary()'>dictionary</a>";
-  ss << " - <a onclick='view_game_log()'>view game log</a>";
-  ss << "<br/><a onclick='view_new_game()'>start new game";
-  for(auto& l: languages) ss << " " << l->flag;
-  ss << "</a>";
+  ss << "<a onclick='view_help()'>" << str_view_help << "</a>";
+  ss << " - <a onclick='view_dictionary()'>" << str_dictionary << "</a>";
+  ss << " - <a onclick='view_game_log()'>" << str_game_log << "</a>";
+  ss << "<br/><a onclick='view_new_game()'>" << str_new_game << "</a>";
   ss << "</div></div>";
   ss << "</div>";
 
@@ -1019,27 +1046,27 @@ void check_discard() {
 
   ss << "<div style=\"float:left;width:10%\">&nbsp;</div>";
   ss << "<div style=\"float:left;width:40%\">"; 
-  ss << "<b>Discard:</b><br/>";
+  ss << "<b>" << str_discard << "</b><br/>";
   for(auto& t: discard) {
     pic p;
     render_tile(p, 0, 0, t, "");
     ss << SVG_to_string(p) << " " << tile_desc(t) << " <br/>";
     }
-  ss << "<a onclick='back_to_game()'>back to game</a> - sort by ";
-  ss << "<a onclick='sort_by(1)'>letter</a>";
-  ss << " / <a onclick='sort_by(2)'>value</a>";
-  ss << " / <a onclick='sort_by(3)'>special</a>";
-  ss << " / <a onclick='sort_by(4)'>rarity</a>";
-  ss << " / <a onclick='sort_by(5)'>reverse</a>";
+  ss << "<a onclick='back_to_game()'>" << str_back_to_game << "</a> - " << str_sort_by << " ";
+  ss << "<a onclick='sort_by(1)'>" << str_letter << "</a>";
+  ss << " / <a onclick='sort_by(2)'>" << str_value << "</a>";
+  ss << " / <a onclick='sort_by(3)'>" << str_special << "</a>";
+  ss << " / <a onclick='sort_by(4)'>" << str_rarity << "</a>";
+  ss << " / <a onclick='sort_by(5)'>" << str_reverse << "</a>";
   ss << "</div>";
   ss << "<div style=\"float:left;width:40%\">"; 
-  ss << "<b>Bag:</b><br/>";
+  ss << "<b>" << str_bag << "</b><br/>";
   for(auto& t: deck) {
     pic p;
     render_tile(p, 0, 0, t, "");
     ss << SVG_to_string(p) << " " << tile_desc(t) << " <br/>";
     }
-  ss << "<a onclick='back_to_game()'>back to game</a>";
+  ss << "<a onclick='back_to_game()'>" << str_back_to_game << "</a>";
   ss << "</div>"; 
   ss << "</div>"; 
 
@@ -1073,9 +1100,9 @@ void view_game_log() {
   stringstream ss;
   ss << "<div style=\"float:left;width:30%\">&nbsp;</div>";
   ss << "<div style=\"float:left;width:40%\">";
-  ss << "<a onclick='back_to_game()'>back to game</a><br/><br/>";
+  ss << "<a onclick='back_to_game()'>" << str_back_to_game << "</a><br/><br/>";
   ss << game_log.str();
-  ss << "<br/><a onclick='back_to_game()'>back to game</a>";
+  ss << "<br/><a onclick='back_to_game()'>" << str_back_to_game << "</a>";
   ss << "</div>";
   ss << "</div>";
   set_value("output", ss.str());
@@ -1113,7 +1140,7 @@ void view_help() {
 
   ss << "<br/>Tax and shop price:<br/>";
   for(int r=1; r<=150; r++) ss << "Round " << r << ": tax " << taxf(r) << " 🪙 price: " << get_min_price(r) << "..." << get_max_price(r) << " 🪙 <br/>";
-  ss << "<br/><a onclick='back_to_game()'>back to game</a>";
+  ss << "<br/><a onclick='back_to_game()'>" << str_back_to_game << "</a>";
   ss << "</div>"; 
   ss << "</div>"; 
 
