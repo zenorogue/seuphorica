@@ -498,7 +498,7 @@ int hrand_once(int i, std::mt19937& which = shop_rng) {
   m /= i;
   d /= m;
   if(d == i) return i-1;
-  return i;
+  return d;
   }
 
 vector<int> board_cache;
