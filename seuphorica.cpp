@@ -1280,7 +1280,10 @@ void review_new_game() {
 
   ss << "<br/><br/>";
 
-  ss << str_language << ": " << next_language->name << "<br/>";
+  auto bak = current;
+  current = next_language;
+
+  ss << str_language << " " << next_language->name << "<br/>";
 
   for(auto l: languages) {
     add_button(ss, "set_language(\"" + l->name + "\")", l->name + " " + l->flag);
@@ -1317,6 +1320,7 @@ void review_new_game() {
 
   ss << "</div></div>";
   set_value("output", ss.str());
+  current = bak;
   }
 
 void view_new_game() {
