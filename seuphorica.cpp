@@ -1646,7 +1646,7 @@ void view_intro() {
     ss << str_exp_daily << daily << ", " << str_time_to_next << secleft;
     ss << "<br/><br/>";
 
-    add_button(ss, "set_language(\"" + l->name + "\"); view_new_game();", str_custom_game);
+    add_button(ss, "set_language(\"" + l->name + "\");", str_custom_game);
     ss << "<br/><br/>";
     ss << str_exp_custom_game;
     ss << "<br/><br/>";
