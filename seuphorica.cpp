@@ -197,6 +197,9 @@ struct halftrans {
   };
 
 halftrans in_pl(polystring x) { return halftrans(&polski, x); }
+halftrans in_de(polystring x) { return halftrans(&deutsch, x); }
+halftrans in_fr(polystring x) { return halftrans(&francais, x); }
+halftrans in_es(polystring x) { return halftrans(&espanol, x); }
 
 polystring operator + (const polystring& s, const halftrans& h) { polystring res; (shared_ptr<polystring_base>&)res = make_shared<translation> (h.l, h.in_l, s); return res; }
 
@@ -264,7 +267,7 @@ polystring str_restrict_example =
   );
 polystring str_special_change = "Special letters can change the language to:" + in_pl("Specjalne litery zmieniają język na:");
 polystring str_naughty = "naughty tiles" + in_pl("niegrzeczne płytki");
-polystring str_welcome = "Welcome to Seuphorica!" + in_pl("Witaj w Seuforice!");
+polystring str_welcome = "Welcome to Seuphorica!" + in_pl("Witaj w Seuforice!") + in_es("Bienvenidos a Seuforica!") + in_de("Willkommen bei Seuforica!") + in_fr("bienvenue à Seuforica!");
 polystring str_standard_game = "standard game" + in_pl("gra standardowa");
 polystring str_exp_standard_game = "All non-controversial special powers can appear in the game. Play as long as you can!"
   + in_pl("Wszystkie niekontrowersyjne moce mogą pojawić się w grze. Graj tak długo, jak chcesz!");
