@@ -263,6 +263,7 @@ polystring str_restrict_example =
   "Przykład: <b>8</b> - 8 losowych mocy; <b>Zatrzymujące,7</b> - Zatrzymujące i 7 innych mocy; <b>-czerwone,3</b> 3 moce ale nie Czerwone; <b>-Niebieskie,99</b> wszystkie moce oprócz Niebieskich<br/>"
   );
 polystring str_special_change = "Special letters can change the language to:" + in_pl("Specjalne litery zmieniają język na:");
+polystring str_naughty = "naughty tiles" + in_pl("niegrzeczne płytki");
 polystring str_welcome = "Welcome to Seuphorica!" + in_pl("Witaj w Seuforice!");
 polystring str_standard_game = "standard game" + in_pl("gra standardowa");
 polystring str_exp_standard_game = "All non-controversial special powers can appear in the game. Play as long as you can!"
@@ -1308,6 +1309,9 @@ void review_new_game() {
     key++;
     }
 
+  ss << "<br/><input id=\"snaughty\" type=\"checkbox\"/> " << str_naughty << "<br/>";
+  pres += "if(document.getElementById(\"snaughty\").checked) poly = poly + \"N\"; ";
+
   ss << "<br/><br/>";
   add_button(ss, "poly = \"\"; " + pres + "restart(document.getElementById(\"seed\").value, poly, document.getElementById(\"restricted\").value)", "restart");
 
@@ -1344,13 +1348,15 @@ void restart(const char *s, const char *poly, const char *_restricted) {
   is_daily = false;
   string spoly = poly;
   polyglot_languages = {};
+  bool do_naughty = false;
   for(char ch: spoly) {
     if(ch >= 'a' && ch < 'a' + int(languages.size()))
       polyglot_languages.insert(languages[ch - 'a']);
     if(ch == 'D') is_daily = true;
+    if(ch == 'N') do_naughty = true;
     }
   for(int i=0; i < (int) sp::first_artifact; i++) {
-    special_allowed[i] = (i >= 2) && (i != (int) sp::naughty) && !bad_language(sp(i));
+    special_allowed[i] = (i >= 2) && (do_naughty || i != (int) sp::naughty) && !bad_language(sp(i));
     }
   string restricted = _restricted;
   std::mt19937 restrict_rng(gameseed);
