@@ -1620,7 +1620,7 @@ void check_daily_time() {
   res->tm_min = 0;
   res->tm_sec = 0;
   time_t t1 = timegm(res);
-  int daily = t1 / 3600 / 24 - 19842;
+  daily = t1 / 3600 / 24 - 19843;
   int seconds_left = 3600*24 - seconds_into;
   sprintf(secleft, "%02d:%02d:%02d", seconds_left / 3600, (seconds_left / 60) % 60, seconds_left % 60);
   }
