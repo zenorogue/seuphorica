@@ -510,6 +510,8 @@ int get_color(coord c) {
     if(r == 24) colors[c] = 1;
     else if(r == 22 || r == 23) colors[c] = 2;
     else colors[c] = 0;
+    if(colors[c] == 1 && !special_allowed[(int) sp::red]) colors[c] = 0;
+    if(colors[c] == 2 && !special_allowed[(int) sp::blue]) colors[c] = 0;
     }
   return colors[c];
   }
