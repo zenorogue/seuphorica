@@ -1435,8 +1435,8 @@ sp generate_artifact() {
   string artadj[10] = {"Ancient ", "Embroidered ", "Glowing ", "Shiny ", "Powerful ", "Forgotten ", "Demonic ", "Angelic ", "Great ", "Magical "};
   string artnoun[10] = {"Glyph", "Rune", "Letter", "Symbol", "Character", "Mark", "Figure", "Sign", "Scribble", "Doodle"};
   auto spec = sp(next);
-  gs.caption = artadj[hrand(10)] + artnoun[hrand(10)];
-  gs.background = rand() % 0x1000000; gs.background |= 0xFF000000;
+  gs.caption = artadj[hrand_once(10)] + artnoun[hrand_once(10)];
+  gs.background = hrand_once(0x1000000); gs.background |= 0xFF000000;
   gs.text_color = 0xFF000000;
   if(!(gs.text_color & 0x800000)) gs.text_color |= 0xFF0000;
   if(!(gs.text_color & 0x008000)) gs.text_color |= 0x00FF00;
