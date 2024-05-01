@@ -375,7 +375,7 @@ vector<special> specials = {
   {"Rich" + in_pl("Bogate"),
    "%+d shop choices in the next round (makes tiles appear in the shop faster)"
    + in_pl("%+d płytek w sklepie w kolejnej rundzie (płytki pojawiają się w sklepie szybciej)"),
-   5, 0xFFFFE500, 0xFF800000},
+   6, 0xFFFFE500, 0xFF800000},
 
   /* other */
   {"Radiating" + in_pl("Promieniujące"),
@@ -1477,7 +1477,7 @@ void build_shop(int qty = 6) {
   shop.clear();
   for(int i=0; i < qty; i++) {
     string l = current->alphabet[hrand(current->alphabet.size())];
-    if(i == 0) l = "AEIOU" [hrand(5)];
+    if(shop_id % 6 == 0) l = "AEIOU" [hrand(5)];
     int val = 1;
     int max_price = get_max_price(roundindex);
     int min_price = get_min_price(roundindex);
@@ -1573,7 +1573,6 @@ void accept_move() {
   drawn = retained;
   draw_tiles(qdraw);
   just_placed.clear();
-  shop_id = 0;
   build_shop(qshop);
   draw_board();
   }
@@ -1605,6 +1604,7 @@ void new_game() {
   add_to_log("started SEUPHORICA v13");
   add_to_log(power_list());
   draw_tiles();
+  shop_id = 0;
   build_shop();
   draw_board();
   game_running = true;
