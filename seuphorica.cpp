@@ -1442,11 +1442,14 @@ sp generate_artifact() {
   if(!(gs.text_color & 0x008000)) gs.text_color |= 0x00FF00;
   if(!(gs.text_color & 0x000080)) gs.text_color |= 0x0000FF;
   auto& art = artifacts[spec];
+  int attempts = 0;
   while(true) {
     art.clear();
-    for(int i=0; i<3; i++) art.push_back(actual_basic_special());
+    int qty = 3 - (attempts / 100);
+    attempts++;
+    for(int i=0; i<qty; i++) art.push_back(actual_basic_special());
     bool reps = false;
-    for(int i=0; i<3; i++) for(int j=0; j<i; j++) {
+    for(int i=0; i<qty; i++) for(int j=0; j<i; j++) {
       if(art[i] == art[j]) reps = true;
       if(get_language(art[i]) && get_language(art[j])) reps = true;
       }
