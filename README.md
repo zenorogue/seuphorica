@@ -28,7 +28,9 @@ V11: fixed not being able to spend all your coins (> vs ≥)
 
 V12: multi-lingual support, seed support
 
-Plans: better dictionary, translate the game itself, multi-letters, drag and drop
+V13: restricted mode, daily game, controversial tile type, rich tiles make tiles appear in the shop faster
+
+Plans: better dictionary, translate the game itself to more languages, multi-letters, drag and drop
 
 Click [this](https://zenorogue.github.io/seuphorica/) to play!
 
@@ -44,4 +46,7 @@ deutsch: https://github.com/enz/german-wordlist (CC-1.0)
 français: https://github.com/Thecoolsim/French-Scrabble-ODS8/blob/main/French%20ODS%20dictionary.txt
 español: https://github.com/kamilmielnik/scrabble-dictionaries/blob/master/spanish/fise-2.txt
 
-
+Naughty word lists based on:
+https://www.cs.cmu.edu/~biglou/resources/bad-words.txt
+https://github.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words (CC-BY 4.0)
+adapted to include other forms
