@@ -231,6 +231,55 @@ polystring str_special = "special" + in_pl("moc");
 polystring str_rarity = "rarity" + in_pl("rzadkość");
 polystring str_reverse = "reverse" + in_pl("odwróć");
 polystring str_sort_by = "sort by" + in_pl("sortowanie:");
+polystring str_you_can_skip = "You can skip your move, but you still need to pay the tax of " + in_pl("Możesz opuścić kolejkę, ale wciąż płacisz podatek ");
+polystring str_not_in_dict = "Includes words not in the dictionary!" + in_pl("Tych słów nie ma w słowniku!");
+polystring str_flying = "Single flying letters cannot just fly away!" + in_pl("Pojedyncze latające liter nie mogą po prostu odlecieć!");
+polystring str_must_cross = "Must cross the existing letters!" + in_pl("Musi się krzyżować z istniejącymi literami!");
+polystring str_single_word = "All placed letters must be a part of a single word!" + in_pl("Wszystkie położone litery muszą być w tym samym słowie!");
+polystring str_tax = "Tax:" + in_pl("Podatek:");
+polystring str_price = "price:" + in_pl("cena:");
+polystring str_total_score = "Total score:" + in_pl("Łączny wynik:");
+polystring str_not_enough = "You do not score enough to pay the tax!" + in_pl("Za mało, by zapłacić podatek!");
+polystring str_illegal = "(illegal word!)" + in_pl("(nielegalne słowo!)");
+polystring str_infinite = "Cannot create infinite words" + in_pl("Nie można tworzyć nieskończonych słów");
+polystring str_least2 = "Enter at least 2 letters!" + in_pl("Wpisz co najmniej 2 litery");
+polystring str_tax_shop_price = "Tax and shop price:" + in_pl("Podatek i ceny w sklepach:");
+polystring str_no_matching = "No matching words:" + in_pl("Brak pasujących słów:");
+polystring str_matching = "matching words" + in_pl("= liczba pasujących słów");
+polystring str_dict_help =
+  "Enter the word to check whether it is in the dictionary.</br>"
+  "You can use: '.' for any letter, '?' for any letter in hand, '$' for any letter in hand or shop.</br><br/>"
+  + in_pl(
+  "Wpisz słowo by sprawdzić, czy jest w słowniku.</br>"
+  "Możesz użyć: '.' dowolna litera, '?' dowolna litera w ręce, '$' dowolna litera w ręce lub sklepie.</br><br/>"
+  );
+polystring str_last_game = "Your last game:" + in_pl("Twoja ostatnia gra:");
+polystring str_language = "Language:" + in_pl("Twój język:");
+polystring str_seed = "seed:" + in_pl("ziarno:");
+polystring str_restricted_specials = "Restricted specials:" + in_pl("Ograniczenie mocy:");
+polystring str_restrict_example =
+  "Examples: <b>8</b> to allow only 8 random special powers; <b>Retain,7</b> to allow only Retain and 7 other special powers; <b>-red,3</b> to allow 3 special powers other than Red; <b>-blue,99</b> to allow all special powers other than Blue<br/>"
+  + in_pl(
+  "Przykład: <b>8</b> - 8 losowych mocy; <b>Zatrzymujące,7</b> - Zatrzymujące i 7 innych mocy; <b>-czerwone,3</b> 3 moce ale nie Czerwone; <b>-Niebieskie,99</b> wszystkie moce oprócz Niebieskich<br/>"
+  );
+polystring str_special_change = "Special letters can change the language to:" + in_pl("Specjalne litery zmieniają język na:");
+polystring str_welcome = "Welcome to Seuphorica!" + in_pl("Witaj w Seuforice!");
+polystring str_standard_game = "standard game" + in_pl("gra standardowa");
+polystring str_exp_standard_game = "All non-controversial special powers can appear in the game. Play as long as you can!"
+  + in_pl("Wszystkie niekontrowersyjne moce mogą pojawić się w grze. Graj tak długo, jak chcesz!");
+polystring str_daily_game = "daily game" + in_pl("gra codzienna");
+polystring str_time_to_next = "time to the next one: " + in_pl("czas do następnej: ");
+polystring str_exp_daily =
+    "Win as much 🪙 as you can in 20 turns! Only 8 randomly chosen special powers are available. "
+    "Everyone playing today gets the same tiles in shop! Great to compare with other players. "
+    "The current daily is #"
+  + in_pl(
+    "Wygraj jak najwięcej 🪙 w 20 rundach! Tylko 8 losowo wybranych mocy jest dostępna. "
+    "Każdy gracz dzisiaj widzi te same płytki w sklepie! Dobry sposób, by się porównać z innymi graczami. "
+    "Obecny numer gry codziennej to #");
+
+polystring str_custom_game = "custom game" + in_pl("ustawienia własne");
+polystring str_exp_custom_game = "More options." + in_pl("Więcej ustawień.");
 
 struct special {
   polystring caption;
@@ -757,7 +806,7 @@ void compute_score() {
         int steps = 0;
         auto at = p;
         while(board.count(at + prev)) {
-          steps++; if(steps >= 10000) { ev.current_scoring = "Cannot create infinite words"; ev.valid_move = false; return; }
+          steps++; if(steps >= 10000) { ev.current_scoring = str_infinite; ev.valid_move = false; return; }
           auto &ta = board.at(at);
           if(has_power(ta, sp::tricky)) seen_tricky = true;
           if(seen_tricky) starts.emplace(at, -prev);
@@ -882,19 +931,19 @@ void compute_score() {
     if(!is_legal) {
       int mul1 = mul + qsooth * sooth;
       scoring << "<b>" << word << ":</b> " << placed << "*" << all << "*" << mul1 << " = " << placed*all*mul1;
-      scoring << " <font color='#FF4040'>(illegal word!)</font>"; illegal_words = true;
+      scoring << " <font color='#FF4040'>" << str_illegal << "</font>"; illegal_words = true;
       scoring << "<br/>";
       }
     }
 
-  if(just_placed.empty()) { scoring << "You can skip your move, but you still need to pay the tax of " << tax() << " 🪙."; }
-  else if(illegal_words) { scoring << "Includes words not in the dictionary!"; ev.valid_move = false; }
-  else if(fly_away) { scoring << "Single flying letters cannot just fly away!"; ev.valid_move = false; }
-  else if(!is_crossing) { scoring << "Must cross the existing letters!"; ev.valid_move = false; }
-  else if(!ev.valid_move) scoring << "All placed letters must be a part of a single word!";
-  else scoring << "Total score: " << ev.total_score << " 🪙 Tax: " << tax() << " 🪙";
+  if(just_placed.empty()) { scoring << str_you_can_skip << tax() << " 🪙."; }
+  else if(illegal_words) { scoring << str_not_in_dict; ev.valid_move = false; }
+  else if(fly_away) { scoring << str_flying; ev.valid_move = false; }
+  else if(!is_crossing) { scoring << str_must_cross; ev.valid_move = false; }
+  else if(!ev.valid_move) scoring << str_single_word;
+  else scoring << str_total_score << " " << ev.total_score << " 🪙 " << str_tax << " " << tax() << " 🪙";
 
-  if(cash + ev.total_score < tax()) { scoring << "<br/>You do not score enough to pay the tax!"; ev.valid_move = false; }
+  if(cash + ev.total_score < tax()) { scoring << "<br/>" << str_not_enough; ev.valid_move = false; }
 
   ev.current_scoring = scoring.str();
   };
@@ -1134,12 +1183,12 @@ void view_help() {
   ss << "<li>the topmost letter in the shop is always A, E, U, I, O</li>";
   ss << "<li>you start with a single standard copy of every letter in your bag; the shop sells letters with extra powers</li>";
   ss << "<li>the board is infinite, but you can only see and use tiles in distance at most 6 from already placed tiles<ul>";
-  ss << "</ul>";
+  ss << "</ul></ul>";
 
-  ss << "<br/><a onclick='back_to_game()'>back to game</a><br/>";
+  ss << "<br/><a onclick='back_to_game()'>" << str_back_to_game << "</a><br/>";
 
-  ss << "<br/>Tax and shop price:<br/>";
-  for(int r=1; r<=150; r++) ss << "Round " << r << ": tax " << taxf(r) << " 🪙 price: " << get_min_price(r) << "..." << get_max_price(r) << " 🪙 <br/>";
+  ss << "<br/>" << str_tax_shop_price << "<br/>";
+  for(int r=1; r<=150; r++) ss << str_turn << " " << r << ": " << str_tax<< " " << taxf(r) << " 🪙 " << str_price << " " << get_min_price(r) << "..." << get_max_price(r) << " 🪙 <br/>";
   ss << "<br/><a onclick='back_to_game()'>" << str_back_to_game << "</a>";
   ss << "</div>"; 
   ss << "</div>"; 
@@ -1156,7 +1205,7 @@ void update_dictionary(string s) {
   stringstream ss;
   for(char& c: s) if(c >= 'a' && c <= 'z') c -= 32;
   int len = utf8_length(s);
-  if(len < 2) ss << "Enter at least 2 letters!";
+  if(len < 2) ss << str_least2;
   else {
     map<string, int> in_hand;
     map<string, int> in_shop;
@@ -1182,8 +1231,8 @@ void update_dictionary(string s) {
         }
       next_word: ;
       }
-    if(qty == 0) ss << "No matching words: " << s << ".";
-    else ss << " (" << qty << " matching words)";
+    if(qty == 0) ss << str_no_matching << " " << s << ".";
+    else ss << " (" << qty << " " << str_matching << ")";
     }
   set_value("answer", ss.str());
   }
@@ -1194,8 +1243,7 @@ void view_dictionary() {
 
   ss << "<div style=\"float:left;width:30%\">&nbsp;</div>";
   ss << "<div style=\"float:left;width:40%\">"; 
-  ss << "Enter the word to check whether it is in the dictionary.</br>";
-  ss << "You can use: '.' for any letter, '?' for any letter in hand, '$' for any letter in hand or shop.</br><br/>";
+  ss << str_dict_help << "</br><br/>";
 
   if(polyglot_languages.size()) {
     for(auto l: languages) {
@@ -1206,7 +1254,7 @@ void view_dictionary() {
 
   ss << "<input id=\"query\" oninput=\"update_dict(document.getElementById('query').value)\" length=40 type=text/><br/><br/>";
   ss << "<div id=\"answer\"></div>";
-  ss << "<br/><a onclick='back_to_game()'>back to game</a><br/>";
+  ss << "<br/><a onclick='back_to_game()'>" << str_back_to_game << "</a><br/>";
   ss << "</div></div>"; 
 
   set_value("output", ss.str());
@@ -1219,17 +1267,17 @@ void review_new_game() {
   ss << "<div style=\"float:left;width:40%\">";
 
   if(game_running) {
-    ss << "Your last game:<br/>";
-    ss << "Language: " << current->name << " seed: " << gameseed << "<br/>";
+    ss << str_last_game << "<br/>";
+    ss << str_language << " " << current->name << " " << str_seed << " " << gameseed << "<br/>";
     ss << power_list()  << "<br/>";
-    ss << "Turn: " << roundindex << " total winnings: " << total_gain << " 🪙<br/><br/>";
-    if(roundindex > 20) ss << "Total winnings until Round 20: " << total_gain_20 << " 🪙<br/>";
-    ss << "<a onclick='back_to_game()'>back to game</a><br/><br/>";
+    ss << str_turn << ": " << roundindex << " " << str_total_winnings << ": " << total_gain << " 🪙<br/><br/>";
+    if(roundindex > 20) ss << str_total_winnings_20 << ": " << total_gain_20 << " 🪙<br/>";
+    ss << "<a onclick='back_to_game()'>" << str_back_to_game << "</a><br/><br/>";
     }
 
   ss << "<br/><br/>";
 
-  ss << "chosen language: " << next_language->name << "<br/>";
+  ss << str_language << ": " << next_language->name << "<br/>";
 
   for(auto l: languages) {
     add_button(ss, "set_language(\"" + l->name + "\")", l->name + " " + l->flag);
@@ -1237,16 +1285,16 @@ void review_new_game() {
 
   ss << "<br/><br/>";
 
-  ss << "Seed: <input id=\"seed\" length=10 type=text/><br/>";
+  ss << str_seed << " <input id=\"seed\" length=10 type=text/><br/>";
   ss << "<br/><br/>";
 
-  ss << "Restricted specials: <input id=\"restricted\" length=10 type=text/><br/>";
-  ss << "Examples: <b>8</b> to allow only 8 random special powers; <b>Retain,7</b> to allow only Retain and 7 other special powers; <b>-red,3</b> to allow 3 special powers other than Red; <b>-blue,99</b> to allow all special powers other than Blue<br/>";
+  ss << str_restricted_specials << " <input id=\"restricted\" length=10 type=text/><br/>";
+  ss << str_restrict_example;
   ss << "<br/><br/>";
 
   string pres;
 
-  ss << "Special letters can change the language to:<br>";
+  ss << str_special_change << "<br>";
   char key = 'a';
 
   for(auto la: languages) {
@@ -1568,22 +1616,21 @@ void view_intro() {
   check_daily_time();
 
   for(auto l: languages) {
-    ss << "<h1>" << l->flag << " Welcome to Seuphorica!</h1>";
+    current = l;
+    ss << "<h1>" << l->flag << " " << str_welcome << "</h1>";
 
-    add_button(ss, "set_language(\"" + l->name + "\"); restart(\"\", \"\", \"\");", "standard game");
+    add_button(ss, "set_language(\"" + l->name + "\"); restart(\"\", \"\", \"\");", str_standard_game);
     ss << "<br/><br/>";
-    ss << "All non-controversial special powers can appear in the game. Play as long as you can!<br/><br/>";
+    ss << str_exp_standard_game << "<br/><br/>";
 
-    add_button(ss, "set_language(\"" + l->name + "\"); restart(\"" + to_string(daily) + "9\", \"D\", \"8\");", "daily game");
+    add_button(ss, "set_language(\"" + l->name + "\"); restart(\"" + to_string(daily) + "9\", \"D\", \"8\");", str_daily_game);
     ss << "<br/><br/>";
-    ss << "Win as much 🪙 as you can in 20 turns! Only 8 randomly chosen special powers are available. ";
-    ss << "Everyone playing today gets the same tiles in shop! Great to compare with other players. ";
-    ss << "The current daily is #" << daily << ", time to the next one: " << secleft;
+    ss << str_exp_daily << daily << ", " << str_time_to_next << secleft;
     ss << "<br/><br/>";
 
-    add_button(ss, "set_language(\"" + l->name + "\"); view_new_game();", "custom game");
+    add_button(ss, "set_language(\"" + l->name + "\"); view_new_game();", str_custom_game);
     ss << "<br/><br/>";
-    ss << "More options.";
+    ss << str_exp_custom_game;
     ss << "<br/><br/>";
     }
 
