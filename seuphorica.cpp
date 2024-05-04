@@ -929,7 +929,7 @@ void compute_score() {
         scoring << "<b>" << nword << ":</b> " << placed << "*" << all << "*" << mul1 << " = " << placed*all*mul1;
         if(l != current) scoring << " " << l->flag;
         scoring << "<br/>";
-        ev.total_score += placed * all * mul;
+        ev.total_score += placed * all * mul1;
         }
       }
 
