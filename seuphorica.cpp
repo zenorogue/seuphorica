@@ -1331,7 +1331,6 @@ void view_new_game() {
   review_new_game();
   }
 
-
 void new_game();
 
 void set_language(const char *s) {
@@ -1601,7 +1600,7 @@ void new_game() {
   draw_rng.seed(gameseed);
   board_cache.clear();
   colors.clear();
-  add_to_log("started SEUPHORICA v13");
+  add_to_log("started SEUPHORICA v14");
   add_to_log(power_list());
   draw_tiles();
   shop_id = 0;
