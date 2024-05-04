@@ -30,7 +30,7 @@ V12: multi-lingual support, seed support
 
 V13: restricted mode, daily game, controversial tile type, rich tiles make tiles appear in the shop faster
 
-V14: fixed a bug with multipliers
+V14: fixed bugs with multipliers (soothing, naughty, reversing+initial/final, tricky+final, tricky+initial+reversing not taken into account)
 
 Plans: better dictionary, translate the game itself to more languages, multi-letters, drag and drop
 
