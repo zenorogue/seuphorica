@@ -899,8 +899,8 @@ void compute_score() {
       if(lang) { polyglot.insert(lang); affect_mul(not_in_base(b.letter)); }
 
       at = at + next;
-      if(has_power(b, sp::final, val)) affect_mul(!board.count(at), 1);
-      if(has_power(b, sp::initial, val)) affect_mul(!board.count(at), 2);
+      if(has_power(b, sp::final, val)) mul += val;
+      if(has_power(b, sp::initial, val)) rmul += val;
       index++;
       if(has_tricky && board.count(at) && !old_tricks.count(allword)) {
         for(int rd=0; rd<directions; rd++) for(auto l: polyglot) {
@@ -916,6 +916,10 @@ void compute_score() {
             }
           }
         }
+      if(has_power(b, sp::final, val)) mul -= val;
+      if(has_power(b, sp::initial, val)) rmul -= val;
+      if(has_power(b, sp::final, val)) affect_mul(!board.count(at), 1);
+      if(has_power(b, sp::initial, val)) affect_mul(!board.count(at), 2);
       }
     if(needed.empty()) ev.valid_move = true;
     bool is_legal = false;
