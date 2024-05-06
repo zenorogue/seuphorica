@@ -1563,8 +1563,8 @@ void accept_move() {
     if(retain) {
       add_to_log("retaining " + short_desc(p));
       retain--;
-      retained.push_back(p);
       p.value += (teach-1);
+      retained.push_back(p);
       continue;
       }
     add_to_log("unused " + short_desc(p));
@@ -1604,7 +1604,7 @@ void new_game() {
   draw_rng.seed(gameseed);
   board_cache.clear();
   colors.clear();
-  add_to_log("started SEUPHORICA v14");
+  add_to_log("started SEUPHORICA v15");
   add_to_log(power_list());
   draw_tiles();
   shop_id = 0;

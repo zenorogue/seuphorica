@@ -32,13 +32,15 @@ V13: restricted mode, daily game, controversial tile type, rich tiles make tiles
 
 V14: fixed bugs with multipliers (soothing, naughty, reversing+initial/final, tricky+final, tricky+initial+reversing not taken into account)
 
+V15: fixed teacher+retain combo
+
 Plans: better dictionary, translate the game itself to more languages, multi-letters, drag and drop
 
 Click [this](https://zenorogue.github.io/seuphorica/) to play!
 
 Also on [this](https://zenorogue.itch.io/seuphorica)
 
-Thanks to Michael, orange triangle, Corey Hardt, Jason Carr, FoxSylv, and ambersz for improvement suggestions!
+Thanks to Michael, orange triangle, Corey Hardt, Jason Carr, FoxSylv, ambersz, and naciya for improvement suggestions!
 
 Dictionaries from:
 
