@@ -19,6 +19,9 @@ int daily;
 
 int next_id;
 int shop_id;
+int identifications = 0;
+
+bool scry_active;
 
 enum class language_state { not_fetched, fetch_started, fetch_progress, fetch_success, fetch_fail };
 
@@ -285,6 +288,21 @@ polystring str_exp_daily =
 polystring str_custom_game = "custom game" + in_pl("ustawienia własne");
 polystring str_exp_custom_game = "More options." + in_pl("Więcej ustawień.");
 
+polystring str_extra_this = "Extra multipliers this turn: " + in_pl("Dodatkowe mnożniki w tej turze: ");
+polystring str_extra_next = "Extra multipliers next turn: " + in_pl("Dodatkowe mnożniki w następnej turze: ") ;
+polystring str_extra_debug = "Extra multipliers debug: ";
+
+polystring str_spells = "Spells in hand:" + in_pl("Czary w ręce:");
+polystring str_unidentified = "not identified" + in_pl("niezidentyfikowane");
+polystring str_identifications = "Identifications: " + in_pl("Identyfikacje: ");
+polystring str_cast_emptyhand = "You cannot cast spells with empty hand." + in_pl("Nie można rzucać czarów z pustą ręką.");
+polystring str_cast_identify = "You identify this spell: " + in_pl("Identyfikujesz ten czar.");
+polystring str_cast_zero = "You have currently no copies of this spell: " + in_pl("Nie masz kopii tego czaru.");
+polystring str_spells_available = "Spells available:" + in_pl("Dostępne czary:");
+polystring str_spells_description =
+  "Spells are gained via Wizard tiles. They can be cast at any time. Many of them affect your topmost tile, so remember to reorder your hand first! Spells cannot be cast if your hand is empty."
+  + in_pl("Czary zdobywasz używając czarodziejskich płytek. Można ja rzucać w dowolnym momencie. Wiele z nich wpływa na najwyższą płytkę, także pamiętaj, by najpierw dobrze ustawić kolejność! Czarów nie można rzucać z pustą ręką.");
+
 struct special {
   polystring caption;
   polystring desc;
@@ -402,6 +420,21 @@ vector<special> specials = {
    + in_pl("kładzione w dwóch miejscach; teleportuje między nimi (maks odległość %d)"),
    6, 0xFF000080, 0xFFFFFFFF},
 
+  {"Wizard" + in_pl("Czarodziejskie"),
+   "gives you %d random Spells when used, for every word it is used in"
+   + in_pl("daje Ci %d losowe Czary przy użyciu, za każde słowo"),
+   2, 0xFF500050, 0xFFFFFF00},
+
+  {"Redrawing" + in_pl("Ciągnące"),
+   "gives you %d redraw Spells when used, for every word it is used in"
+   + in_pl("daje Ci %d Czary Ciągnięcia przy użyciu, za każde słowo"),
+   3, 0xFF502050, 0xFFFFFFFF},
+
+  {"Delayed" + in_pl("Opóźnione"),
+   "%+d multiplier two turns later"
+   + in_pl("mnożnik %+d za dwie kolejki"),
+   2, 0xFFC04040, 0xFF400000},
+
   /* controversial */
   {"Naughty" + in_pl("Niegrzeczne"),
    "%+d multiplier when used in a naughty word" + in_pl("mnożnik %+d gdy użyte w niegrzecznym słowie"),
@@ -423,6 +456,7 @@ enum class sp {
   teacher, trasher, multitrasher, duplicator, retain,
   drawing, rich,
   radiating, tricky, soothing, wild, portal,
+  wizard, redrawing, delayed,
 
   naughty,
 
@@ -482,6 +516,7 @@ int gameseed;
 std::mt19937 draw_rng;
 std::mt19937 shop_rng;
 std::mt19937 board_rng;
+std::mt19937 spells_rng;
 
 int hrand(int i, std::mt19937& which = shop_rng) {
   unsigned d = which() - which.min();
@@ -503,7 +538,15 @@ int hrand_once(int i, std::mt19937& which = shop_rng) {
 
 vector<int> board_cache;
 
+bool colors_swapped;
+
 int get_color(coord c) {
+  bool has_red = special_allowed[(int) sp::red];
+  bool has_blue = special_allowed[(int) sp::blue];
+  if(!has_red && !has_blue) return 0;
+  bool has_swap = special_allowed[(int) sp::wizard];
+  if(has_swap) has_red = has_blue = true;
+
   if(!colors.count(c)) { 
     int ax = abs(c.x), ay = abs(c.y);
     int index = (ax+ay) * (ax+ay) + ax;
@@ -514,16 +557,44 @@ int get_color(coord c) {
     if(r == 24) colors[c] = 1;
     else if(r == 22 || r == 23) colors[c] = 2;
     else colors[c] = 0;
-    if(colors[c] == 1 && !special_allowed[(int) sp::red]) colors[c] = 0;
-    if(colors[c] == 2 && !special_allowed[(int) sp::blue]) colors[c] = 0;
+    if(colors[c] == 1 && !has_red) colors[c] = 0;
+    if(colors[c] == 2 && !has_blue) colors[c] = 0;
     }
-  return colors[c];
+  auto res = colors[c];
+  if(res && colors_swapped) res = 3 - res;
+  return res;
   }
+
+/* note: if spell[1].action_id is 2, then spell[1].inventory refers to the number of held spells which perform spell[2].action, similarly spell[1].identified */
+
+struct spell {
+  /* unidentified name */
+  polystring color;
+  /* identified name -- scrambled */
+  polystring caption;
+  /* identified description -- scrambled */
+  polystring desc;
+  /* action performed on cast -- scrambled */
+  std::function<void()> action;
+  /* action id */
+  int action_id;
+  /* number of spells of this color in inventory */
+  int inventory;
+  /* are spells of this color identified? */
+  bool identified;
+  };
 
 vector<tile> drawn;
 vector<tile> deck;
 vector<tile> discard;
 vector<tile> shop;
+
+array<int, 3> stacked_mults;
+
+void spell_message(const string&);
+string last_spell_effect;
+
+extern vector<spell> spells;
 
 tile empty_tile(0, sp::notile);
 
@@ -755,6 +826,7 @@ struct eval {
   bool valid_move;
   set<coord> used_tiles;
   set<vector<coord>> new_tricks;
+  int qwizard, qredraw;
   };
 
 eval ev;
@@ -829,6 +901,7 @@ void compute_score() {
   ev.total_score = 0;
   ev.valid_move = just_placed.empty();
   ev.used_tiles.clear();
+  ev.qwizard = 0; ev.qredraw = 0;
 
   bool illegal_words = false;
 
@@ -844,7 +917,7 @@ void compute_score() {
   stringstream scoring;
   for(auto ss: starts) {
     auto at = ss.first, next = ss.second;
-    int placed = 0, all = 0, mul = 1;
+    int placed = 0, all = 0, mul = 1 + stacked_mults[roundindex % 3];
     string word;
     set<coord> needed;
     for(auto p: just_placed) if(!has_power(board.at(p), sp::flying)) needed.insert(p);
@@ -853,7 +926,7 @@ void compute_score() {
     int directions = 1;
     bool optional = board.count(at-next);
     vector<coord> allword;
-    int rmul = 1;
+    int rmul = 1 + stacked_mults[roundindex % 3];
     int qsooth = 0;
     int sooth = 0, rsooth = 0;
     int naughtymul = 0, naughtysooth = 0;
@@ -892,6 +965,8 @@ void compute_score() {
       if(has_power(b, sp::blue, val)) affect_mul(get_color(at) == 2);
       if(has_power(b, sp::initial, val)) { affect_mul(index == 0, 1); }
       if(has_power(b, sp::final, val)) { affect_mul(index == 0, 2); }
+      if(has_power(b, sp::redrawing, val)) { ev.qredraw += val; }
+      if(has_power(b, sp::wizard, val)) { ev.qwizard += val; }
       if(has_power(b, sp::bending, val))
         affect_mul(board.count(at-coord(1,0)) && board.count(at+coord(1,0)) && board.count(at-coord(0,1)) && board.count(at+coord(0,1)));
 
@@ -1049,6 +1124,24 @@ void draw_board() {
       }
     ss << "<br/>";
     }
+
+  bool have_spells = false;
+  for(auto& sp: spells) if(sp.identified || sp.inventory) have_spells = true;
+  if(have_spells) {
+    ss << "<b>" << str_spells << "</b><br/>";
+    for(int id=0; id<int(spells.size()); id++) {
+      auto& sp = spells[id];
+      auto& sp2 = spells[sp.action_id];
+      if(sp.identified || sp.inventory) {
+        if(sp.identified)
+          ss << "<a onclick='cast_spell(" << id << ")'>" << sp2.caption << "</a> (" << sp.inventory << "): " << sp2.desc << "<br/>";5
+        else
+          ss << "<a onclick='cast_spell(" << id << ")'>" << sp.color << "</a> (" << sp.inventory << "): " << str_unidentified << "<br/>";
+        }
+      }
+    if(last_spell_effect != "") ss << last_spell_effect << "<br/>";
+    if(identifications) ss << str_identifications << identifications << "<br/>";
+    }
   ss << "</div>";
 
   ss << "<div style=\"float:left;width:20%\">";
@@ -1076,6 +1169,12 @@ void draw_board() {
   if(game_restricted) {
     ss << power_list() << "<br/>";
     }
+  int sm0 = stacked_mults[roundindex%3];
+  int sm1 = stacked_mults[(roundindex+1)%3];
+  int sm2 = stacked_mults[(roundindex+2)%3];
+  if(sm0) { ss << str_extra_this << sm0 << "<br/>"; }
+  if(sm1) { ss << str_extra_next << sm1 << "<br/>"; }
+  if(sm2) { ss << str_extra_debug << sm2 << "<br/>"; }
   ss << str_turn << ": " << roundindex << " " << str_total_winnings << ": " << total_gain << " 🪙<br/>";
   if(roundindex > 20) ss << str_total_winnings_20 << ": " << total_gain_20 << " 🪙<br/>";
   ss << ev.current_scoring << "<br/><br/>";
@@ -1196,6 +1295,10 @@ void view_help() {
   ss << "</ul></ul>";
 
   ss << "<br/><a onclick='back_to_game()'>" << str_back_to_game << "</a><br/>";
+
+  ss << "<br/>" << str_spells_available << "<br/>";
+  for(auto& s: spells) ss << "<b>" << s.caption << "</b>: " << s.desc << "<br/>";
+  ss << str_spells_description << "<br/>";
 
   ss << "<br/>" << str_tax_shop_price << "<br/>";
   for(int r=1; r<=150; r++) ss << str_turn << " " << r << ": " << str_tax<< " " << taxf(r) << " 🪙 " << str_price << " " << get_min_price(r) << "..." << get_max_price(r) << " 🪙 <br/>";
@@ -1417,12 +1520,18 @@ void restart(const char *s, const char *poly, const char *_restricted) {
 
 void draw_tiles(int qty = 8) {
   for(int i=0; i < qty; i++) {
-    if(deck.empty()) swap(deck, discard);
+    if(deck.empty()) { swap(deck, discard); scry_active = false; }
     if(deck.empty()) break;
-    int which = hrand(deck.size(), draw_rng);
-    drawn.emplace_back(std::move(deck[which]));
-    deck[which] = std::move(deck.back());
-    deck.pop_back();
+    if(scry_active) {
+      drawn.emplace_back(std::move(deck[0]));
+      deck.erase(deck.begin());
+      }
+    else {
+      int which = hrand(deck.size(), draw_rng);
+      drawn.emplace_back(std::move(deck[which]));
+      deck[which] = std::move(deck.back());
+      deck.pop_back();
+      }
     }
   }
 
@@ -1518,6 +1627,7 @@ void accept_move() {
   cash += ev.total_score - tax();
   total_gain += ev.total_score;
   if(roundindex <= 20) total_gain_20 = total_gain;
+  stacked_mults[roundindex%3] = 0;
   roundindex++;
   int qdraw = 8, qshop = 6, teach = 1, copies_unused = 1, copies_used = 1;
   int retain = 0;
@@ -1535,6 +1645,7 @@ void accept_move() {
     if(has_power(b, sp::multitrasher, val)) copies_unused--;
     if(has_power(b, sp::duplicator, val)) copies_used += val;
     if(has_power(b, sp::retain, val)) retain += val;
+    if(has_power(b, sp::delayed, val)) stacked_mults[(roundindex + 1)%3] += val;
     }
 
   for(auto& p: just_placed) {
@@ -1571,12 +1682,21 @@ void accept_move() {
     p.value += teach;
     for(int c=0; c<copies_unused; c++) discard.push_back(p);
     }
+  while(ev.qwizard) {
+    ev.qwizard--;
+    spells[hrand_once(spells.size(), spells_rng)].inventory++;
+    }
+  if(ev.qredraw) {
+    for(auto& s: spells) if(s.action_id == 0) { s.inventory += ev.qredraw; s.identified = true; }
+    }
+
   add_to_log(ev.current_scoring);
   add_to_log("total score: "+to_string(ev.total_score)+" tax: "+to_string(tax_paid)+" cash in round "+to_string(roundindex)+": " + to_string(cash));
   drawn = retained;
   draw_tiles(qdraw);
   just_placed.clear();
   build_shop(qshop);
+  last_spell_effect = "";
   draw_board();
   }
 
@@ -1602,6 +1722,7 @@ void new_game() {
   shop_rng.seed(gameseed);
   board_rng.seed(gameseed);
   draw_rng.seed(gameseed);
+  spells_rng.seed(gameseed);
   board_cache.clear();
   colors.clear();
   add_to_log("started SEUPHORICA v15");
@@ -1610,6 +1731,20 @@ void new_game() {
   shop_id = 0;
   build_shop();
   draw_board();
+  colors_swapped = false;
+
+  for(int i=0; i<int(spells.size()); i++) {
+    auto& s = spells[i];
+    s.inventory = 0; s.identified = false;
+    auto& other = spells[hrand_once(1+i, spells_rng)].action_id;
+    s.action_id = other; other = i;
+    }
+  last_spell_effect = "";
+
+  for(auto& x: stacked_mults) x = 0;
+  identifications = 0;
+  scry_active = false;
+
   game_running = true;
   }
 
@@ -1670,6 +1805,94 @@ int dist(coord a, coord b) {
   return max(abs(a.x-b.x), abs(a.y-b.y));
   }
 
+vector<spell> spells = {
+  {"Red", "Redraw", "Redraw the topmost tile.", [] {
+     if(deck.empty() && discard.empty()) {
+       spell_message("You cannot redraw." + in_pl("Nie masz skąd ciągnąć."));
+       return;
+       }
+     draw_tiles(1);
+     string str = "You replace " + short_desc(drawn[0]) + " with " + short_desc(drawn.back()) + ".";
+     discard.push_back(drawn[0]);
+     drawn.erase(drawn.begin());
+     spell_message(str);
+     }},
+  {"Violet", "Swap", "Swap the red and blue symbols.", [] {
+     colors_swapped = !colors_swapped;
+     spell_message("You swap the colors on board." + in_pl("Zamieniasz kolory na planszy."));
+    }},
+  {"Black", "Trash", "Trash the topmost tile.", [] {
+    string str = ("You trash " + in_pl("Wyrzuczasz "))->get() + short_desc(drawn[0]) + ".";
+    drawn.erase(drawn.begin());
+    spell_message(str);
+    }},
+  {"Green", "Double", "Duplicate the topmost tile.", [] {
+    string str = ("You duplicate " + in_pl("Podwajasz "))->get() + short_desc(drawn[0]) + ".";
+    drawn.push_back(drawn[0]);
+    spell_message(str);
+    }},
+  {"Golden", "Charisma", "Reduce the shop prices and the topmost tile value to 75% (rounded downwards).", [] {
+    string str = ("You reduce the value of " + short_desc(drawn[0]) + " and shop prices.") + in_pl("Zmniejszasz wartość " + short_desc(drawn[0]) + " i ceny.");
+    drawn[0].value = drawn[0].value * 3/4;
+    for(auto& s: shop) s.price = s.price * 3/4;
+    spell_message(str);
+    }},
+  {"White", "Identify", "The next scroll is identified instead of being used.", [] {
+    identifications++;
+    spell_message("You can now identify a spell." + in_pl("Możesz teraz zidentyfikować czar."));
+    }},
+  {"Blue", "Power", "Increase the multiplier by 1 for all words this turn.", [] {
+    stacked_mults[roundindex%3]++;
+    spell_message("You gain power. (multiplier +1)" + in_pl("Zdobywasz moc. (mnożnik +1)"));
+    }},
+  {"Cyan", "Sacrifice", "Decrease the multiplier by 1 for all words this turn, but increase the topmost tile value by 2.", []{
+    string str = ("You sacrifice power but improve " + in_pl("Poświęcasz moc by poprawić: "))->get() + short_desc(drawn[0]) + ".";
+    stacked_mults[roundindex%3]--;
+    drawn[0].value = drawn[0].value + 2;
+    spell_message(str);
+    }},
+  {"Turquoise", "Morph", "Change the topmost tile to the next letter in the alphabet.", []{
+    auto lang = get_language(drawn[0]);
+    if(!lang) lang = current;
+    string old = short_desc(drawn[0]);
+    for(int i=0; i<int(lang->alphabet.size()); i++)
+      if(lang->alphabet[i] == drawn[0].letter) {
+        drawn[0].letter = lang->alphabet[(i+1) % lang->alphabet.size()];
+        break;
+        }
+    string str = ("You morph " + old + " to " + short_desc(drawn[0]) + ".") + in_pl("Przekształcasz: " + old + " -> " + short_desc(drawn[0]));
+    spell_message(str);
+    }},
+  {"Brown", "Scry", "See the order of tiles in your bag.", [] {
+    if(!scry_active) {
+      scry_active = true;
+      vector<tile> new_deck;
+      while(deck.size()) {
+        int which = hrand(deck.size(), draw_rng);
+        new_deck.emplace_back(std::move(deck[which]));
+        deck[which] = std::move(deck.back());
+        deck.pop_back();
+        }
+      deck = std::move(new_deck);
+      }
+    string str = "Scrying: " + in_pl("Widzisz: ");
+    int q = 0;
+    for(auto& b: deck) {
+      if(q) str += ", ";
+      str += short_desc(b);
+      q++;
+      }
+    spell_message(str);
+    scry_active = true;
+    }},
+  };
+
+void spell_message(const string& s) {
+  last_spell_effect = s;
+  add_to_log(s);
+  draw_board();
+  }
+
 extern "C" {
   void start(bool mobile) { gameseed = time(NULL); init(mobile); }
   
@@ -1725,6 +1948,25 @@ extern "C" {
       cash -= shop[i].price;
       drawn.insert(drawn.begin(), std::move(shop[i])); shop.erase(shop.begin() + i); draw_board();
       }
+    }
+
+  void cast_spell(int i) {
+    if(!spells[i].identified && identifications) {
+      spells[i].identified = true; identifications--;
+      spell_message(str_cast_identify->get() + spells[spells[i].action_id].caption->get() + ".");
+      return;
+      }
+    if(!spells[i].inventory) {
+      string g = spells[spells[i].action_id].caption->get();
+      spell_message(str_cast_zero->get() + g + ".");
+      return;
+      }
+    if(drawn.empty()) {
+      spell_message(str_cast_emptyhand);
+      return;
+      }
+    spells[i].inventory--; spells[i].identified = true;
+    spells[spells[i].action_id].action();
     }
 
   void back_to_shop() {

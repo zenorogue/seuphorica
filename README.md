@@ -34,6 +34,8 @@ V14: fixed bugs with multipliers (soothing, naughty, reversing+initial/final, tr
 
 V15: fixed teacher+retain combo
 
+V16: Wizard, Redrawing, and Delayed tiles
+
 Plans: better dictionary, translate the game itself to more languages, multi-letters, drag and drop
 
 Click [this](https://zenorogue.github.io/seuphorica/) to play!
