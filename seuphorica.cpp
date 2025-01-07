@@ -1831,10 +1831,10 @@ vector<spell> spells = {
     drawn.push_back(drawn[0]);
     spell_message(str);
     }},
-  {"Golden", "Charisma", "Reduce the shop prices and the topmost tile value to 75% (rounded downwards).", [] {
+  {"Golden", "Charisma", "Reduce the shop prices and the topmost tile value to 50% (rounded downwards).", [] {
     string str = ("You reduce the value of " + short_desc(drawn[0]) + " and shop prices.") + in_pl("Zmniejszasz wartość " + short_desc(drawn[0]) + " i ceny.");
-    drawn[0].value = drawn[0].value * 3/4;
-    for(auto& s: shop) s.price = s.price * 3/4;
+    drawn[0].value = drawn[0].value / 2;
+    for(auto& s: shop) s.price = s.price / 2;
     spell_message(str);
     }},
   {"White", "Identify", "The next scroll is identified instead of being used.", [] {
