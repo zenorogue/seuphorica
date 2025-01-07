@@ -298,10 +298,13 @@ polystring str_identifications = "Identifications: " + in_pl("Identyfikacje: ");
 polystring str_cast_emptyhand = "You cannot cast spells with empty hand." + in_pl("Nie można rzucać czarów z pustą ręką.");
 polystring str_cast_identify = "You identify this spell: " + in_pl("Identyfikujesz ten czar.");
 polystring str_cast_zero = "You have currently no copies of this spell: " + in_pl("Nie masz kopii tego czaru.");
-polystring str_spells_available = "Spells available:" + in_pl("Dostępne czary:");
+
+polystring str_spells_need_identify =
+  "You have not yet identified the following spells:" + in_pl("Następujące czary jeszcze nie zostały zidentyfikowane:");
 polystring str_spells_description =
   "Spells are gained via Wizard tiles. They can be cast at any time. Many of them affect your topmost tile, so remember to reorder your hand first! Spells cannot be cast if your hand is empty."
   + in_pl("Czary zdobywasz używając czarodziejskich płytek. Można ja rzucać w dowolnym momencie. Wiele z nich wpływa na najwyższą płytkę, także pamiętaj, by najpierw dobrze ustawić kolejność! Czarów nie można rzucać z pustą ręką.");
+
 
 struct special {
   polystring caption;
@@ -576,8 +579,10 @@ struct spell {
   polystring desc;
   /* action performed on cast -- scrambled */
   std::function<void()> action;
-  /* action id */
+  /* action id, for given color/index */
   int action_id;
+  /* color id, for given action/caption/desc/inventory/identified */
+  int color_id;
   /* number of spells of this color in inventory */
   int inventory;
   /* are spells of this color identified? */
@@ -1134,7 +1139,7 @@ void draw_board() {
       auto& sp2 = spells[sp.action_id];
       if(sp.identified || sp.inventory) {
         if(sp.identified)
-          ss << "<a onclick='cast_spell(" << id << ")'>" << sp2.caption << "</a> (" << sp.inventory << "): " << sp2.desc << "<br/>";5
+          ss << "<a onclick='cast_spell(" << id << ")'>" << sp2.caption << "</a> (" << sp.inventory << "): " << sp2.desc << "<br/>";
         else
           ss << "<a onclick='cast_spell(" << id << ")'>" << sp.color << "</a> (" << sp.inventory << "): " << str_unidentified << "<br/>";
         }
@@ -1296,9 +1301,12 @@ void view_help() {
 
   ss << "<br/><a onclick='back_to_game()'>" << str_back_to_game << "</a><br/>";
 
-  ss << "<br/>" << str_spells_available << "<br/>";
-  for(auto& s: spells) ss << "<b>" << s.caption << "</b>: " << s.desc << "<br/>";
-  ss << str_spells_description << "<br/>";
+  for(auto &s: spells) if(!s.identified) {
+    ss << "<br/>" << str_spells_need_identify << "<br/>";
+    for(auto& s: spells) if(!spells[s.action_id].identified) ss << "<b>" << s.caption << "</b>: " << s.desc << "<br/>";
+    break;
+    }
+  ss << "br/" << str_spells_description << "<br/>";
 
   ss << "<br/>" << str_tax_shop_price << "<br/>";
   for(int r=1; r<=150; r++) ss << str_turn << " " << r << ": " << str_tax<< " " << taxf(r) << " 🪙 " << str_price << " " << get_min_price(r) << "..." << get_max_price(r) << " 🪙 <br/>";
@@ -1687,7 +1695,8 @@ void accept_move() {
     spells[hrand_once(spells.size(), spells_rng)].inventory++;
     }
   if(ev.qredraw) {
-    for(auto& s: spells) if(s.action_id == 0) { s.inventory += ev.qredraw; s.identified = true; }
+    auto& s = spells[spells[0].color_id];
+    s.inventory += ev.qredraw; s.identified = true;
     }
 
   add_to_log(ev.current_scoring);
@@ -1739,6 +1748,7 @@ void new_game() {
     auto& other = spells[hrand_once(1+i, spells_rng)].action_id;
     s.action_id = other; other = i;
     }
+  for(int i=0; i<int(spells.size()); i++) spells[spells[i].action_id].color_id = i;
   last_spell_effect = "";
 
   for(auto& x: stacked_mults) x = 0;
