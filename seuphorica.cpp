@@ -302,8 +302,8 @@ polystring str_cast_zero = "You have currently no copies of this spell: " + in_p
 polystring str_spells_need_identify =
   "You have not yet identified the following spells:" + in_pl("Następujące czary jeszcze nie zostały zidentyfikowane:");
 polystring str_spells_description =
-  "Spells are gained via Wizard tiles. They can be cast at any time. Many of them affect your topmost tile, so remember to reorder your hand first! Spells cannot be cast if your hand is empty."
-  + in_pl("Czary zdobywasz używając czarodziejskich płytek. Można ja rzucać w dowolnym momencie. Wiele z nich wpływa na najwyższą płytkę, także pamiętaj, by najpierw dobrze ustawić kolejność! Czarów nie można rzucać z pustą ręką.");
+  "Spells are gained via Wizard tiles. They can be cast at any time. Many of them affect your topmost tile, so remember to reorder your hand first! Spells cannot be cast if your hand is empty. Usually, you will not know what a spell does before you use it for the first time."
+  + in_pl("Czary zdobywasz używając czarodziejskich płytek. Można ja rzucać w dowolnym momencie. Wiele z nich wpływa na najwyższą płytkę, także pamiętaj, by najpierw dobrze ustawić kolejność! Czarów nie można rzucać z pustą ręką. Zazwyczaj nie wiesz, co robi czar przed użyciem go po raz pierwszy.");
 
 
 struct special {
@@ -1303,10 +1303,10 @@ void view_help() {
 
   for(auto &s: spells) if(!s.identified) {
     ss << "<br/>" << str_spells_need_identify << "<br/>";
-    for(auto& s: spells) if(!spells[s.action_id].identified) ss << "<b>" << s.caption << "</b>: " << s.desc << "<br/>";
+    for(auto& s: spells) if(!spells[s.color_id].identified) ss << "<b>" << s.caption << "</b>: " << s.desc << "<br/>";
     break;
     }
-  ss << "br/" << str_spells_description << "<br/>";
+  ss << "<br/>" << str_spells_description << "<br/>";
 
   ss << "<br/>" << str_tax_shop_price << "<br/>";
   for(int r=1; r<=150; r++) ss << str_turn << " " << r << ": " << str_tax<< " " << taxf(r) << " 🪙 " << str_price << " " << get_min_price(r) << "..." << get_max_price(r) << " 🪙 <br/>";
