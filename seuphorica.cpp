@@ -296,7 +296,7 @@ polystring str_spells = "Spells in hand:" + in_pl("Czary w ręce:");
 polystring str_unidentified = "not identified" + in_pl("niezidentyfikowane");
 polystring str_identifications = "Identifications: " + in_pl("Identyfikacje: ");
 polystring str_cast_emptyhand = "You cannot cast spells with empty hand." + in_pl("Nie można rzucać czarów z pustą ręką.");
-polystring str_cast_identify = "You identify this spell: " + in_pl("Identyfikujesz ten czar.");
+polystring str_cast_identify = "You identify this spell: " + in_pl("Identyfikujesz ten czar: ");
 polystring str_cast_zero = "You have currently no copies of this spell: " + in_pl("Nie masz kopii tego czaru.");
 
 polystring str_spells_need_identify =
