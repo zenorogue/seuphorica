@@ -570,9 +570,19 @@ int get_color(coord c) {
 
 /* note: if spell[1].action_id is 2, then spell[1].inventory refers to the number of held spells which perform spell[2].action, similarly spell[1].identified */
 
-struct spell {
+std::vector<std::string> greek_letters = {"α", "β", "γ", "δ", "ε", "ζ", "η", "θ", "ι", "κ", "λ", "μ", "ν", "ξ", "ο", "π", "ρ", "σ", "τ", "υ", "φ", "χ", "ψ", "ω"};
+
+string color_to_str(unsigned col) {
+  char buf[10];
+  snprintf(buf, 8, "%06X", col);
+  return buf;
+  }
+
+struct spell {n
   /* unidentified name */
   polystring color;
+  /* color */
+  unsigned color_value;
   /* identified name -- scrambled */
   polystring caption;
   /* identified description -- scrambled */
@@ -587,6 +597,8 @@ struct spell {
   int inventory;
   /* are spells of this color identified? */
   bool identified;
+  /* the Greek letter representing this spell */
+  string greek;
   };
 
 vector<tile> drawn;
@@ -802,6 +814,23 @@ void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
     t2.onclick = onc;
     p += t2;
     }
+  }
+
+string spell_desc(int id, int qty = -1) {
+  auto& sp = spells[id];
+  auto& sp2 = spells[sp.action_id];
+
+  stringstream ss;
+  if(qty != -1) ss << "<a onclick='cast_spell(" << id << ")'>";
+  ss << "<font color=\"" << color_to_str(sp.color_value) << "\">" << sp.greek;
+  if(sp.identified) ss << " " << sp2.caption;
+  else ss << " " << sp.color;
+  ss << "</font>";
+  if(qty != -1) ss << "</a>";
+  if(qty != -1) ss << " (x" << qty << ")";
+  if(sp.identified) ss << ": " << sp2.desc;
+  else ss << ": " << str_unidentified;
+  return ss.str();
   }
 
 int cash = 80;
@@ -1136,16 +1165,13 @@ void draw_board() {
     ss << "<b>" << str_spells << "</b><br/>";
     for(int id=0; id<int(spells.size()); id++) {
       auto& sp = spells[id];
-      auto& sp2 = spells[sp.action_id];
       if(sp.identified || sp.inventory) {
-        if(sp.identified)
-          ss << "<a onclick='cast_spell(" << id << ")'>" << sp2.caption << "</a> (" << sp.inventory << "): " << sp2.desc << "<br/>";
-        else
-          ss << "<a onclick='cast_spell(" << id << ")'>" << sp.color << "</a> (" << sp.inventory << "): " << str_unidentified << "<br/>";
+        ss << spell_desc(id, sp.inventory) << "<br/>";
         }
       }
     if(last_spell_effect != "") ss << last_spell_effect << "<br/>";
     if(identifications) ss << str_identifications << identifications << "<br/>";
+    ss << "<br/>";
     }
   ss << "</div>";
 
@@ -1742,11 +1768,14 @@ void new_game() {
   draw_board();
   colors_swapped = false;
 
+  auto g = greek_letters;
   for(int i=0; i<int(spells.size()); i++) {
     auto& s = spells[i];
     s.inventory = 0; s.identified = false;
     auto& other = spells[hrand_once(1+i, spells_rng)].action_id;
     s.action_id = other; other = i;
+    int id = hrand_once(g.size(), spells_rng);
+    s.greek = g[id]; swap(g[id], g.back()); g.pop_back();
     }
   for(int i=0; i<int(spells.size()); i++) spells[spells[i].action_id].color_id = i;
   last_spell_effect = "";
@@ -1816,7 +1845,7 @@ int dist(coord a, coord b) {
   }
 
 vector<spell> spells = {
-  {"Red", "Redraw", "Redraw the topmost tile.", [] {
+  {"Red", 0xFF2020, "Redraw", "Redraw the topmost tile.", [] {
      if(deck.empty() && discard.empty()) {
        spell_message("You cannot redraw." + in_pl("Nie masz skąd ciągnąć."));
        return;
@@ -1827,41 +1856,41 @@ vector<spell> spells = {
      drawn.erase(drawn.begin());
      spell_message(str);
      }},
-  {"Violet", "Swap", "Swap the red and blue symbols.", [] {
+  {"Violet", 0xFF20FF, "Swap", "Swap the red and blue symbols.", [] {
      colors_swapped = !colors_swapped;
      spell_message("You swap the colors on board." + in_pl("Zamieniasz kolory na planszy."));
     }},
-  {"Black", "Trash", "Trash the topmost tile.", [] {
+  {"Black", 0x505050, "Trash", "Trash the topmost tile.", [] {
     string str = ("You trash " + in_pl("Wyrzuczasz "))->get() + short_desc(drawn[0]) + ".";
     drawn.erase(drawn.begin());
     spell_message(str);
     }},
-  {"Green", "Double", "Duplicate the topmost tile.", [] {
+  {"Green", 0x20FF20, "Double", "Duplicate the topmost tile.", [] {
     string str = ("You duplicate " + in_pl("Podwajasz "))->get() + short_desc(drawn[0]) + ".";
     drawn.push_back(drawn[0]);
     spell_message(str);
     }},
-  {"Golden", "Charisma", "Reduce the shop prices and the topmost tile value to 50% (rounded downwards).", [] {
+  {"Golden", 0xFFD500, "Charisma", "Reduce the shop prices and the topmost tile value to 50% (rounded downwards).", [] {
     string str = ("You reduce the value of " + short_desc(drawn[0]) + " and shop prices.") + in_pl("Zmniejszasz wartość " + short_desc(drawn[0]) + " i ceny.");
     drawn[0].value = drawn[0].value / 2;
     for(auto& s: shop) s.price = s.price / 2;
     spell_message(str);
     }},
-  {"White", "Identify", "The next scroll is identified instead of being used.", [] {
+  {"White", 0xF0F0F0, "Identify", "The next scroll is identified instead of being used.", [] {
     identifications++;
     spell_message("You can now identify a spell." + in_pl("Możesz teraz zidentyfikować czar."));
     }},
-  {"Blue", "Power", "Increase the multiplier by 1 for all words this turn.", [] {
+  {"Blue", 0x4040FF, "Power", "Increase the multiplier by 1 for all words this turn.", [] {
     stacked_mults[roundindex%3]++;
     spell_message("You gain power. (multiplier +1)" + in_pl("Zdobywasz moc. (mnożnik +1)"));
     }},
-  {"Cyan", "Sacrifice", "Decrease the multiplier by 1 for all words this turn, but increase the topmost tile value by 2.", []{
+  {"Cyan", 0x20FFFF, "Sacrifice", "Decrease the multiplier by 1 for all words this turn, but increase the topmost tile value by 2.", []{
     string str = ("You sacrifice power but improve " + in_pl("Poświęcasz moc by poprawić: "))->get() + short_desc(drawn[0]) + ".";
     stacked_mults[roundindex%3]--;
     drawn[0].value = drawn[0].value + 2;
     spell_message(str);
     }},
-  {"Turquoise", "Morph", "Change the topmost tile to the next letter in the alphabet.", []{
+  {"Yellow", 0xFFFF20, "Morph", "Change the topmost tile to the next letter in the alphabet.", []{
     auto lang = get_language(drawn[0]);
     if(!lang) lang = current;
     string old = short_desc(drawn[0]);
@@ -1873,7 +1902,7 @@ vector<spell> spells = {
     string str = ("You morph " + old + " to " + short_desc(drawn[0]) + ".") + in_pl("Przekształcasz: " + old + " -> " + short_desc(drawn[0]));
     spell_message(str);
     }},
-  {"Brown", "Scry", "See the order of tiles in your bag.", [] {
+  {"Brown", 0x804000, "Scry", "See the order of tiles in your bag.", [] {
     if(!scry_active) {
       scry_active = true;
       vector<tile> new_deck;
@@ -1963,7 +1992,7 @@ extern "C" {
   void cast_spell(int i) {
     if(!spells[i].identified && identifications) {
       spells[i].identified = true; identifications--;
-      spell_message(str_cast_identify->get() + spells[spells[i].action_id].caption->get() + ".");
+      spell_message(str_cast_identify->get() + spell_desc(i) + ".");
       return;
       }
     if(!spells[i].inventory) {
