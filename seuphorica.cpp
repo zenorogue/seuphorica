@@ -1964,52 +1964,52 @@ int dist(coord a, coord b) {
   }
 
 vector<spell> spells = {
-  {"Red", 0xFF2020, "Redraw", "Redraw the topmost tile.", [] {
+  {"Red" + in_pl("Czerwień"), 0xFF2020, "Redraw" + in_pl("Ciąg"), "Redraw the topmost tile." + in_pl("Wymieniasz najwyższą płytkę."), [] {
      if(deck.empty() && discard.empty()) {
        spell_message("You cannot redraw." + in_pl("Nie masz skąd ciągnąć."));
        return;
        }
      draw_tiles(1);
-     string str = "You replace " + short_desc(drawn[0]) + " with " + short_desc(drawn.back()) + ".";
+     string str = ("You replace " + short_desc(drawn[0]) + " with " + short_desc(drawn.back()) + ".") + in_pl("Zamieniasz " + short_desc(drawn[0]) + " na " + short_desc(drawn.back()));
      discard.push_back(drawn[0]);
      drawn.erase(drawn.begin());
      spell_message(str);
      }},
-  {"Violet", 0xFF20FF, "Swap", "Swap red/power and blue/stay symbols.", [] {
+  {"Violet" + in_pl("Fiolet"), 0xFF20FF, "Swap" + in_pl("Zamiana"), "Swap red/power and blue/stay symbols." + in_pl("Zamieniasz miejsca czerwone/moc i niebieskie/stój."), [] {
      colors_swapped = !colors_swapped;
      spell_message("You swap the spots on board." + in_pl("Zamieniasz miejsca na planszy."));
     }},
-  {"Black", 0x505050, "Trash", "Trash the topmost tile.", [] {
+  {"Black" + in_pl("Czerń"), 0x505050, "Trash" + in_pl("Czystość"), "Trash the topmost tile." + in_pl("Wywala najwyższą płytkę."), [] {
     string str = ("You trash " + in_pl("Wyrzuczasz "))->get() + short_desc(drawn[0]) + ".";
     drawn.erase(drawn.begin());
     spell_message(str);
     }},
-  {"Green", 0x20FF20, "Double", "Duplicate the topmost tile.", [] {
+  {"Green" + in_pl("Zieleń"), 0x20FF20, "Double" + in_pl("Dwa"), "Duplicate the topmost tile." + in_pl("Podwaja najwyższą płytkę."), [] {
     string str = ("You duplicate " + in_pl("Podwajasz "))->get() + short_desc(drawn[0]) + ".";
     drawn.push_back(drawn[0]);
     spell_message(str);
     }},
-  {"Golden", 0xFFD500, "Charisma", "Reduce the shop prices and the topmost tile value to 50% (rounded downwards).", [] {
+  {"Golden" + in_pl("Złoto"), 0xFFD500, "Charisma" + in_pl("Charyzma"), "Reduce the shop prices and the topmost tile value to 50% (rounded downwards)." + in_pl("Zmniejsza ceny i wartość najwyższej płytki do połowy (zaokrąglone w dół)."), [] {
     string str = ("You reduce the value of " + short_desc(drawn[0]) + " and shop prices.") + in_pl("Zmniejszasz wartość " + short_desc(drawn[0]) + " i ceny.");
     drawn[0].value = drawn[0].value / 2;
     for(auto& s: shop) s.price = s.price / 2;
     spell_message(str);
     }},
-  {"White", 0xF0F0F0, "Identify", "The next scroll is identified instead of being used.", [] {
+  {"White" + in_pl("Biel"), 0xF0F0F0, "Identify" + in_pl("Wiedza"), "The next spell is identified instead of being used." + in_pl("Kolejny czar jest identyfikowany zamiast używany."), [] {
     identifications++;
     spell_message("You can now identify a spell." + in_pl("Możesz teraz zidentyfikować czar."));
     }},
-  {"Blue", 0x4040FF, "Power", "Increase the multiplier by 1 for all words this turn.", [] {
+  {"Blue" + in_pl("Błękit"), 0x4040FF, "Power" + in_pl("Moc"), "Increase the multiplier by 1 for all words this turn." + in_pl("Zwiększa mnożnikw szystkich słów w tej kolejce o 1."), [] {
     stacked_mults[roundindex%3]++;
     spell_message("You gain power. (multiplier +1)" + in_pl("Zdobywasz moc. (mnożnik +1)"));
     }},
-  {"Cyan", 0x20FFFF, "Sacrifice", "Decrease the multiplier by 1 for all words this turn, but increase the topmost tile value by 2.", []{
+  {"Cyan" + in_pl("Turkus"), 0x20FFFF, "Sacrifice" + in_pl("Poświęcenie"), "Decrease the multiplier by 1 for all words this turn, but increase the topmost tile value by 2." + in_pl("Zmniejsza mnożnik o 1 w tej kolejce, ale zwiększa wartość najwyższej płytki o 2."), []{
     string str = ("You sacrifice power but improve " + in_pl("Poświęcasz moc by poprawić: "))->get() + short_desc(drawn[0]) + ".";
     stacked_mults[roundindex%3]--;
     drawn[0].value = drawn[0].value + 2;
     spell_message(str);
     }},
-  {"Yellow", 0xFFFF20, "Morph", "Change the topmost tile to the next letter in the alphabet.", []{
+  {"Yellow" + in_pl("Żółć"), 0xFFFF20, "Morph" + in_pl("Morf"), "Change the topmost tile to the next letter in the alphabet." + in_pl("Zmienia najwyższą płytkę na kolejną literę w alfabecie."), []{
     auto lang = get_language(drawn[0]);
     if(!lang) lang = current;
     string old = short_desc(drawn[0]);
@@ -2021,7 +2021,7 @@ vector<spell> spells = {
     string str = ("You morph " + old + " to " + short_desc(drawn[0]) + ".") + in_pl("Przekształcasz: " + old + " -> " + short_desc(drawn[0]));
     spell_message(str);
     }},
-  {"Brown", 0x804000, "Scry", "See the order of tiles in your bag.", [] {
+  {"Brown" + in_pl("Brąz"), 0x804000, "Scry" + in_pl("Wróżba"), "See the order of tiles in your bag." + in_pl("Pokazuje kolejność płytek w worku."), [] {
     if(!scry_active) {
       scry_active = true;
       vector<tile> new_deck;
