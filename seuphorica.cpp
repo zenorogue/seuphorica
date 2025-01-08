@@ -875,12 +875,15 @@ int get_min_price(int r) {
   return (1+get_max_price(r)) / 2;
   }
 
+map<string, int> word_use_count;
+
 struct eval {
   int total_score;
   string current_scoring;
   bool valid_move;
   set<coord> used_tiles;
   set<vector<coord>> new_tricks;
+  vector<string> used_words;
   int qdelay;
   };
 
@@ -957,6 +960,8 @@ void compute_score() {
   ev.valid_move = just_placed.empty();
   ev.used_tiles.clear();
   ev.qdelay = 0;
+  ev.new_tricks.clear();
+  ev.used_words.clear();
 
   bool illegal_words = false;
 
@@ -1038,12 +1043,13 @@ void compute_score() {
           auto& nword = rd ? rword : word;
           auto& nmul = rd ? rmul : mul;
           if(ok(word, index, l)) {
-            int mul1 = nmul + qsooth * sooth + (is_naughty(word, l) ? naughtymul : naughtysooth * sooth);
+            int mul1 = nmul + qsooth * sooth + (is_naughty(word, l) ? naughtymul : naughtysooth * sooth) - word_use_count[word];
             scoring << "<b>" << nword << ":</b> " << placed << "*" << all << "*" << mul1 << " = " << placed*all*mul1;
             if(l != current) scoring << " " << l->flag;
             scoring << "<br/>";
             ev.total_score += placed * all * mul1;
             ev.new_tricks.insert(allword);
+            ev.used_words.push_back(word);
             }
           }
         }
@@ -1059,21 +1065,23 @@ void compute_score() {
       auto& nword = rd ? rword : word;
       auto& nmul = rd ? rmul : mul;
       if(ok(nword, index, l)) {
-        int mul1 = nmul + qsooth * sooth + (is_naughty(word, l) ? naughtymul : naughtysooth * sooth);
+        int mul1 = nmul + qsooth * sooth + (is_naughty(word, l) ? naughtymul : naughtysooth * sooth) - word_use_count[nword];
         is_legal = true;
         scoring << "<b>" << nword << ":</b> " << placed << "*" << all << "*" << mul1 << " = " << placed*all*mul1;
         if(l != current) scoring << " " << l->flag;
         scoring << "<br/>";
+        ev.used_words.push_back(nword);
         ev.total_score += placed * all * mul1;
         }
       }
 
     if(!is_legal && optional) continue;
     if(!is_legal) {
-      int mul1 = mul + qsooth * sooth;
+      int mul1 = mul + qsooth * sooth - word_use_count[word];
       scoring << "<b>" << word << ":</b> " << placed << "*" << all << "*" << mul1 << " = " << placed*all*mul1;
       scoring << " <font color='#FF4040'>" << str_illegal << "</font>"; illegal_words = true;
       scoring << "<br/>";
+      ev.used_words.push_back(word);
       }
     }
 
@@ -1400,7 +1408,8 @@ void view_help() {
   ss << "<li>tiles bought from the shop can be used immediately or discarded for increased value</li>";
   ss << "<li>the topmost letter in the shop is always A, E, U, I, O</li>";
   ss << "<li>you start with a single standard copy of every letter in your bag; the shop sells letters with extra powers</li>";
-  ss << "<li>the board is infinite, but you can only see and use tiles in distance at most 6 from already placed tiles<ul>";
+  ss << "<li>the board is infinite, but you can only see and use tiles in distance at most 6 from already placed tiles</li>";
+  ss << "<li>the multiplier is reduced by 1 for every time when you used the same word in the previous turns</li><ul>";
   ss << "</ul></ul>";
 
   ss << "<br/><a onclick='back_to_game()'>" << str_back_to_game << "</a><br/>";
@@ -1746,6 +1755,7 @@ void accept_move() {
 
   last_spell_effect = "";
   for(auto& w: ev.new_tricks) old_tricks.insert(w);
+  for(auto& w: ev.used_words) word_use_count[w]++;
 
   stacked_mults[(roundindex + 1)%3] += ev.qdelay;
 
@@ -1854,6 +1864,7 @@ void new_game() {
   build_shop();
   draw_board();
   colors_swapped = false;
+  word_use_count.clear();
 
   auto g = greek_letters;
   for(int i=0; i<int(spells.size()); i++) {
