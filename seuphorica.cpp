@@ -1878,7 +1878,6 @@ void new_game() {
   draw_tiles();
   shop_id = 0;
   build_shop();
-  draw_board();
   colors_swapped = false;
   word_use_count.clear();
 
@@ -1903,6 +1902,7 @@ void new_game() {
   identifications = 0;
   scry_active = false;
 
+  draw_board();
   game_running = true;
   }
 
