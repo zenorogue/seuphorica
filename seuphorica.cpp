@@ -298,7 +298,7 @@ polystring str_extra_this = "Extra multipliers this turn: " + in_pl("Dodatkowe m
 polystring str_extra_next = "Extra multipliers next turn: " + in_pl("Dodatkowe mnożniki w następnej turze: ") ;
 polystring str_extra_debug = "Extra multipliers debug: ";
 
-polystring str_spells = "Spells in hand:" + in_pl("Czary w ręce:");
+polystring str_spells = "Spells in library:" + in_pl("Czary w bibliotece:");
 polystring str_unidentified = "not identified" + in_pl("niezidentyfikowane");
 polystring str_identifications = "Identifications: " + in_pl("Identyfikacje: ");
 polystring str_cast_emptyhand = "You cannot cast spells with empty hand." + in_pl("Nie można rzucać czarów z pustą ręką.");
