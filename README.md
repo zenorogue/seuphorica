@@ -38,6 +38,8 @@ V16: Wizard, Redrawing, and Delayed tiles
 
 V17: more special spots on the map, repeatedly reused words now reduce multipliers, rebalancing, more setup options
 
+V18: fixed (and nerfed the bonus to 50%) Delayed with multiple words; fixed some bugs with portals and power/stay spots
+
 Plans: better dictionary, translate the game itself to more languages, multi-letters, drag and drop
 
 Click [this](https://zenorogue.github.io/seuphorica/) to play!
