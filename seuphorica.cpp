@@ -1091,6 +1091,7 @@ void compute_score() {
       scoring << " <font color='#FF4040'>" << str_illegal << "</font>"; illegal_words = true;
       scoring << "<br/>";
       ev.used_words.push_back(word);
+      ev.qdelay += start_delay;
       }
     }
 
