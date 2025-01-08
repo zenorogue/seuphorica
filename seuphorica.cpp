@@ -1873,7 +1873,7 @@ void new_game() {
   spells_rng.seed(gameseed);
   board_cache.clear();
   colors.clear();
-  add_to_log("started SEUPHORICA v15");
+  add_to_log("started SEUPHORICA v17");
   add_to_log(power_list());
   draw_tiles();
   shop_id = 0;
