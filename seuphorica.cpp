@@ -1403,7 +1403,7 @@ void view_help() {
   ss << "<li>standard copies of the tiles are placed permanently on the board (only geometry-altering and foreign powers are kept)</li>";
   ss << "<li>tiles you have used are discarded</li>";
   ss << "<li>tiles you have not used have their value increased, and are discarded</li>";
-  ss << "<li>you draw 8 new tiles from the bag (if bag is empty, discarded tiles go back to the bag), and the shop has a new selection of 5 items</li>";
+  ss << "<li>you draw 8 new tiles from the bag (if bag is empty, discarded tiles go back to the bag), and the shop has a new selection of 6 items</li>";
   ss << "<li>you have to pay a tax which increases in each round</li></ul></li>";
   ss << "<li>tiles bought from the shop can be used immediately or discarded for increased value</li>";
   ss << "<li>the topmost letter in the shop is always A, E, U, I, O</li>";
