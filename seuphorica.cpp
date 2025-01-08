@@ -246,6 +246,7 @@ polystring str_flying = "Single flying letters cannot just fly away!" + in_pl("P
 polystring str_must_cross = "Must cross the existing letters!" + in_pl("Musi się krzyżować z istniejącymi literami!");
 polystring str_single_word = "All placed letters must be a part of a single word!" + in_pl("Wszystkie położone litery muszą być w tym samym słowie!");
 polystring str_tax = "Tax:" + in_pl("Podatek:");
+polystring str_delayed_mult = " Delayed mult: " + in_pl(" opóźniony mnożnik: ");
 polystring str_price = "price:" + in_pl("cena:");
 polystring str_total_score = "Total score:" + in_pl("Łączny wynik:");
 polystring str_not_enough = "You do not score enough to pay the tax!" + in_pl("Za mało, by zapłacić podatek!");
@@ -440,7 +441,7 @@ vector<special> specials = {
    2, 0xFF502050, 0xFFFFFFFF},
 
   {"Delayed" + in_pl("Opóźnione"),
-   "%+d multiplier two turns later, for every word it is used in"
+   "%+d multiplier two turns later, 50%% more for every extra word it is used in"
    + in_pl("mnożnik %+d za dwie kolejki"),
    2, 0xFFC04040, 0xFF400000},
 
@@ -983,7 +984,7 @@ void compute_score() {
   stringstream scoring;
   for(auto ss: starts) {
     auto at = ss.first, next = ss.second;
-    int placed = 0, all = 0, mul = 1 + stacked_mults[roundindex % 3];
+    int placed = 0, all = 0, mul = 1 + stacked_mults[roundindex % 3], start_delay = 0;
     string word;
     set<coord> needed;
     for(auto p: just_placed) if(!has_power(board.at(p), sp::flying)) needed.insert(p);
@@ -1033,7 +1034,7 @@ void compute_score() {
       if(has_power(b1, sp::blue, val)) affect_mul(get_color(at) == beBlue);
       if(has_power(b1, sp::initial, val)) { affect_mul(index == 0, 1); }
       if(has_power(b1, sp::final, val)) { affect_mul(index == 0, 2); }
-      if(has_power(b1, sp::delayed, val)) { ev.qdelay += val; }
+      if(has_power(b1, sp::delayed, val)) { start_delay += val; }
       if(has_power(b1, sp::bending, val))
         affect_mul(board.count(at-coord(1,0)) && board.count(at+coord(1,0)) && board.count(at-coord(0,1)) && board.count(at+coord(0,1)));
 
@@ -1056,6 +1057,7 @@ void compute_score() {
             ev.total_score += placed * all * mul1;
             ev.new_tricks.insert(allword);
             ev.used_words.push_back(word);
+            ev.qdelay += start_delay;
             }
           }
         }
@@ -1078,6 +1080,7 @@ void compute_score() {
         scoring << "<br/>";
         ev.used_words.push_back(nword);
         ev.total_score += placed * all * mul1;
+        ev.qdelay += start_delay;
         }
       }
 
@@ -1097,6 +1100,16 @@ void compute_score() {
   else if(!is_crossing) { scoring << str_must_cross; ev.valid_move = false; }
   else if(!ev.valid_move) scoring << str_single_word;
   else scoring << str_total_score << " " << ev.total_score << " 🪙 " << str_tax << " " << tax() << " 🪙";
+
+  for(auto& p: ev.used_tiles) {
+    auto& b = board.at(p);
+    auto b1 = b; if(get_color(p) == bePower) b1.rarity++;
+    int val;
+    if(has_power(b1, sp::delayed, val)) ev.qdelay += val;
+    }
+  ev.qdelay /= 2;
+
+  if(ev.qdelay) scoring << str_delayed_mult << ev.qdelay;
 
   if(cash + ev.total_score < tax()) { scoring << "<br/>" << str_not_enough; ev.valid_move = false; }
 
