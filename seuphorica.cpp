@@ -1863,9 +1863,12 @@ void accept_move() {
 
 void new_game() {
   deck = {};
+  old_tricks = {};
   board = {};
   drawn = {};
   shop = {};
+  portals = {};
+  just_placed = {};
   cash = 80;
   roundindex = 1;
   total_gain = 0;
