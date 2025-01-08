@@ -1824,6 +1824,7 @@ void accept_move() {
     int selftrash = 0;
     if(has_power(b, sp::trasher)) selftrash = 1;
     if(col == beStay) selftrash++;
+    if(has_power(b, sp::portal) && get_color(portals.at(p))) selftrash++;
     if(has_power(b, sp::duplicator)) selftrash++;
     if(!other_end) for(int i=selftrash; i<copies_used; i++) discard.push_back(b);
     bool keep = false;
@@ -2079,7 +2080,10 @@ extern "C" {
       auto t = board.at(portal_from);
       int d = dist(portal_from, c);
       int val;
+      bool powered = get_color(portal_from) == bePower && get_color(c) == bePower;
+      if(powered) t.rarity++;
       has_power(t, sp::portal, val);
+      if(powered) t.rarity--;
       if(d > val) { placing_portal = false; back_from_board(portal_from.x, portal_from.y); return; }
       board.emplace(c, t);
       portals.emplace(c, portal_from);
