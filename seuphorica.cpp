@@ -299,6 +299,7 @@ polystring str_identifications = "Identifications: " + in_pl("Identyfikacje: ");
 polystring str_cast_emptyhand = "You cannot cast spells with empty hand." + in_pl("Nie można rzucać czarów z pustą ręką.");
 polystring str_cast_identify = "You identify this spell: " + in_pl("Identyfikujesz ten czar: ");
 polystring str_cast_zero = "You have currently no copies of this spell: " + in_pl("Nie masz kopii tego czaru.");
+polystring str_yields = " yields " + in_pl(" daje: ");
 
 polystring str_spells_need_identify =
   "You have not yet identified the following spells:" + in_pl("Następujące czary jeszcze nie zostały zidentyfikowane:");
@@ -425,17 +426,17 @@ vector<special> specials = {
    6, 0xFF000080, 0xFFFFFFFF},
 
   {"Wizard" + in_pl("Czarodziejskie"),
-   "gives you %d random Spells when used, for every word it is used in"
+   "gives you %d random Spells when used"
    + in_pl("daje Ci %d losowe Czary przy użyciu, za każde słowo"),
    2, 0xFF500050, 0xFFFFFF00},
 
   {"Redrawing" + in_pl("Ciągnące"),
-   "gives you %d redraw Spells when used, for every word it is used in"
+   "gives you %d redraw Spells when used"
    + in_pl("daje Ci %d Czary Ciągnięcia przy użyciu, za każde słowo"),
    2, 0xFF502050, 0xFFFFFFFF},
 
   {"Delayed" + in_pl("Opóźnione"),
-   "%+d multiplier two turns later"
+   "%+d multiplier two turns later, for every word it is used in"
    + in_pl("mnożnik %+d za dwie kolejki"),
    2, 0xFFC04040, 0xFF400000},
 
@@ -880,7 +881,7 @@ struct eval {
   bool valid_move;
   set<coord> used_tiles;
   set<vector<coord>> new_tricks;
-  int qwizard, qredraw;
+  int qdelay;
   };
 
 eval ev;
@@ -955,7 +956,7 @@ void compute_score() {
   ev.total_score = 0;
   ev.valid_move = just_placed.empty();
   ev.used_tiles.clear();
-  ev.qwizard = 0; ev.qredraw = 0;
+  ev.qdelay = 0;
 
   bool illegal_words = false;
 
@@ -1021,8 +1022,7 @@ void compute_score() {
       if(has_power(b1, sp::blue, val)) affect_mul(get_color(at) == beBlue);
       if(has_power(b1, sp::initial, val)) { affect_mul(index == 0, 1); }
       if(has_power(b1, sp::final, val)) { affect_mul(index == 0, 2); }
-      if(has_power(b1, sp::redrawing, val)) { ev.qredraw += val; }
-      if(has_power(b1, sp::wizard, val)) { ev.qwizard += val; }
+      if(has_power(b1, sp::delayed, val)) { ev.qdelay += val; }
       if(has_power(b1, sp::bending, val))
         affect_mul(board.count(at-coord(1,0)) && board.count(at+coord(1,0)) && board.count(at-coord(0,1)) && board.count(at+coord(0,1)));
 
@@ -1744,7 +1744,10 @@ void accept_move() {
   int qdraw = 8, qshop = 6, teach = 1, copies_unused = 1, copies_used = 1;
   int retain = 0;
 
+  last_spell_effect = "";
   for(auto& w: ev.new_tricks) old_tricks.insert(w);
+
+  stacked_mults[(roundindex + 1)%3] += ev.qdelay;
 
   for(auto& p: ev.used_tiles) {
     auto& b = board.at(p);
@@ -1758,7 +1761,17 @@ void accept_move() {
     if(has_power(b1, sp::multitrasher, val)) copies_unused--;
     if(has_power(b1, sp::duplicator, val)) copies_used += val;
     if(has_power(b1, sp::retain, val)) retain += val;
-    if(has_power(b1, sp::delayed, val)) stacked_mults[(roundindex + 1)%3] += val;
+    if(has_power(b1, sp::wizard, val)) while(val--) {
+      int spell_id = hrand_once(spells.size(), spells_rng);
+      spells[spell_id].inventory++;
+      string out = short_desc(b) + string(str_yields) + spell_desc(spell_id);
+      last_spell_effect += out + "<br/>";
+      add_to_log(out);
+      }
+    if(has_power(b1, sp::redrawing, val)) {
+      auto& s = spells[spells[0].color_id];
+      s.inventory += val; s.identified = true;
+      }
     }
 
   for(auto& p: just_placed) {
@@ -1799,14 +1812,6 @@ void accept_move() {
     p.value += teach;
     for(int c=0; c<copies_unused; c++) discard.push_back(p);
     }
-  while(ev.qwizard) {
-    ev.qwizard--;
-    spells[hrand_once(spells.size(), spells_rng)].inventory++;
-    }
-  if(ev.qredraw) {
-    auto& s = spells[spells[0].color_id];
-    s.inventory += ev.qredraw; s.identified = true;
-    }
 
   add_to_log(ev.current_scoring);
   add_to_log("total score: "+to_string(ev.total_score)+" tax: "+to_string(tax_paid)+" cash in round "+to_string(roundindex)+": " + to_string(cash));
@@ -1814,7 +1819,6 @@ void accept_move() {
   draw_tiles(qdraw);
   just_placed.clear();
   build_shop(qshop);
-  last_spell_effect = "";
   draw_board();
   }
 
