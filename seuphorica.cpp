@@ -25,6 +25,8 @@ bool scry_active;
 
 enum class language_state { not_fetched, fetch_started, fetch_progress, fetch_success, fetch_fail };
 
+bool enabled_spells, enabled_stay, enabled_power, enabled_id;
+
 struct language {
   language_state state;
   map<int, set<string>> dictionary;
@@ -266,8 +268,10 @@ polystring str_seed = "seed:" + in_pl("ziarno:");
 polystring str_restricted_specials = "Restricted specials:" + in_pl("Ograniczenie mocy:");
 polystring str_restrict_example =
   "Examples: <b>8</b> to allow only 8 random special powers; <b>Retain,7</b> to allow only Retain and 7 other special powers; <b>-red,3</b> to allow 3 special powers other than Red; <b>-blue,99</b> to allow all special powers other than Blue<br/>"
+  "Also -id to disable identification, -power/-stay/-spell to disable special spots on the map<br/>"
   + in_pl(
   "Przykład: <b>8</b> - 8 losowych mocy; <b>Zatrzymujące,7</b> - Zatrzymujące i 7 innych mocy; <b>-czerwone,3</b> 3 moce ale nie Czerwone; <b>-Niebieskie,99</b> wszystkie moce oprócz Niebieskich<br/>"
+  "Poza tym -id by wyłączyć identyfikację, -power/-stay/-spell by wyłączyć specjalne miejsca na mapie<br/>"
   );
 polystring str_special_change = "Special letters can change the language to:" + in_pl("Specjalne litery zmieniają język na:");
 polystring str_naughty = "naughty tiles" + in_pl("niegrzeczne płytki");
@@ -576,9 +580,9 @@ eBoardEffect get_color(coord c) {
   bool has_red = special_allowed[(int) sp::red];
   bool has_blue = special_allowed[(int) sp::blue];
   // if(!has_red && !has_blue) return 0;
-  bool has_swap = special_allowed[(int) sp::wizard];
-  if(has_swap) has_red = has_blue = true;
-  has_red = has_blue = true;
+  bool has_swap = special_allowed[(int) sp::wizard] || enabled_spells;
+  if(enabled_stay && has_swap) has_blue = true;
+  if(enabled_power && has_swap) has_red = true;
 
   if(!colors.count(c)) { 
     int ax = abs(c.x), ay = abs(c.y);
@@ -587,7 +591,7 @@ eBoardEffect get_color(coord c) {
     if(c.x > 0) index++; if(c.y > 0) index+=2;
     while(board_cache.size() <= index) {
       board_cache.push_back(hrand(25, board_rng));
-      if(board_cache.back() == 18 || board_cache.back() == 17) board_cache.back() = 64 + hrand(spells.size(), board_rng);
+      if(board_cache.back() == 18 || board_cache.back() == 17) if(enabled_spells) board_cache.back() = 64 + hrand(spells.size(), board_rng);
       }
     int r = board_cache[index];
     if(r == 24) colors[c] = beRed;
@@ -600,11 +604,13 @@ eBoardEffect get_color(coord c) {
 
     if(colors[c] == beRed && !has_red) colors[c] = beNone;
     if(colors[c] == beBlue && !has_blue) colors[c] = beNone;
+    if(colors[c] == beStay && !enabled_stay) colors[c] = beNone;
+    if(colors[c] == bePower && !enabled_power) colors[c] = beNone;
     }
   auto res = colors[c];
-  if(res == beRed && colors_swapped) res = bePower;
+  if(res == beRed && colors_swapped && enabled_power) res = bePower;
   else if(res == bePower && colors_swapped) res = beRed;
-  else if(res == beBlue && colors_swapped) res = beStay;
+  else if(res == beBlue && colors_swapped && enabled_stay) res = beStay;
   else if(res == beStay && colors_swapped) res = beBlue;
   return res;
   }
@@ -1246,12 +1252,12 @@ void draw_board() {
     }
 
   bool have_spells = false;
-  for(auto& sp: spells) if(sp.identified || sp.inventory) have_spells = true;
+  for(auto& sp: spells) if((sp.identified && enabled_id) || sp.inventory) have_spells = true;
   if(have_spells) {
     ss << "<b>" << str_spells << "</b><br/>";
     for(int id=0; id<int(spells.size()); id++) {
       auto& sp = spells[id];
-      if(sp.identified || sp.inventory) {
+      if((sp.identified && enabled_id) || sp.inventory) {
         ss << spell_desc(id, sp.inventory) << "<br/>";
         }
       }
@@ -1595,12 +1601,22 @@ void restart(const char *s, const char *poly, const char *_restricted) {
   string restricted = _restricted;
   std::mt19937 restrict_rng(gameseed);
   game_restricted = (restricted != "");
+
+  enabled_spells = true;
+  enabled_stay = true;
+  enabled_power = true;
+  enabled_id = true;
+
   if(game_restricted) {
     vector<int> chosen;
     restricted += ",";
     string cur;
     for(char c: restricted) {
       if(c == ',') {
+        if(cur == "-stay") enabled_stay = false;
+        if(cur == "-spell") enabled_spells = false;
+        if(cur == "-power") enabled_power = false;
+        if(cur == "-id") enabled_id = false;
         for(int i=0; i<(int) sp::first_artifact; i++) if(specials[i].caption->eqcap(cur)) {
           special_allowed[i] = false;
           chosen.push_back(i);
@@ -1869,9 +1885,14 @@ void new_game() {
   auto g = greek_letters;
   for(int i=0; i<int(spells.size()); i++) {
     auto& s = spells[i];
-    s.inventory = 0; s.identified = false;
-    auto& other = spells[hrand_once(1+i, spells_rng)].action_id;
-    s.action_id = other; other = i;
+    s.inventory = 0; s.identified = !enabled_id;
+    if(enabled_id) {
+      auto& other = spells[hrand_once(1+i, spells_rng)].action_id;
+      s.action_id = other; other = i;
+      }
+    else {
+      s.action_id = i;
+      }
     int id = hrand_once(g.size(), spells_rng);
     s.greek = g[id]; swap(g[id], g.back()); g.pop_back();
     }
