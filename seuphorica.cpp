@@ -211,6 +211,7 @@ ostream& operator << (ostream& os, const polystring& s) { return os << s->get();
 polystring str_powers = "Powers:" + in_pl("Moce:");
 polystring str_rare = "Rare" + in_pl("Rzadkie");
 polystring str_epic = "Epic" + in_pl("Epickie");
+polystring str_legendary = "Legendary" + in_pl("Legendarne");
 polystring str_tiles_in_hand = "Tiles in hand:" + in_pl("Płytki w ręce:");
 polystring str_discard = "discard:" + in_pl("odrzucone:");
 polystring str_bag= "bag:" + in_pl("worek:");
@@ -468,6 +469,31 @@ enum class sp {
   first_artifact
   };
 
+struct spell {
+  /* unidentified name */
+  polystring color;
+  /* color */
+  unsigned color_value;
+  /* identified name -- scrambled */
+  polystring caption;
+  /* identified description -- scrambled */
+  polystring desc;
+  /* action performed on cast -- scrambled */
+  std::function<void()> action;
+  /* action id, for given color/index */
+  int action_id;
+  /* color id, for given action/caption/desc/inventory/identified */
+  int color_id;
+  /* number of spells of this color in inventory */
+  int inventory;
+  /* are spells of this color identified? */
+  bool identified;
+  /* the Greek letter representing this spell */
+  string greek;
+  };
+
+extern vector<spell> spells;
+
 array<bool, (int) sp::first_artifact> special_allowed;
 
 stringstream game_log;
@@ -505,7 +531,9 @@ set<coord> just_placed;
 
 map<coord, tile> board;
 
-map<coord, int> colors;
+enum eBoardEffect { beNone, beRed, beBlue, bePower, beStay, beSpell = 64 };
+
+map<coord, eBoardEffect> colors;
 
 set<vector<coord>> old_tricks;
 
@@ -543,28 +571,40 @@ vector<int> board_cache;
 
 bool colors_swapped;
 
-int get_color(coord c) {
+eBoardEffect get_color(coord c) {
   bool has_red = special_allowed[(int) sp::red];
   bool has_blue = special_allowed[(int) sp::blue];
-  if(!has_red && !has_blue) return 0;
+  // if(!has_red && !has_blue) return 0;
   bool has_swap = special_allowed[(int) sp::wizard];
   if(has_swap) has_red = has_blue = true;
+  has_red = has_blue = true;
 
   if(!colors.count(c)) { 
     int ax = abs(c.x), ay = abs(c.y);
     int index = (ax+ay) * (ax+ay) + ax;
     index *= 4;
     if(c.x > 0) index++; if(c.y > 0) index+=2;
-    while(board_cache.size() <= index) board_cache.push_back(hrand(25, board_rng));
+    while(board_cache.size() <= index) {
+      board_cache.push_back(hrand(25, board_rng));
+      if(board_cache.back() == 18 || board_cache.back() == 17) board_cache.back() = 64 + hrand(spells.size(), board_rng);
+      }
     int r = board_cache[index];
-    if(r == 24) colors[c] = 1;
-    else if(r == 22 || r == 23) colors[c] = 2;
-    else colors[c] = 0;
-    if(colors[c] == 1 && !has_red) colors[c] = 0;
-    if(colors[c] == 2 && !has_blue) colors[c] = 0;
+    if(r == 24) colors[c] = beRed;
+    else if(r == 22 || r == 23) colors[c] = beBlue;
+    else if(r == 21) colors[c] = bePower;
+    else if(r == 20 || r == 19) colors[c] = beStay;
+    else if(r >= 64) colors[c] = eBoardEffect(beSpell + (r - 64));
+    else colors[c] = beNone;
+
+
+    if(colors[c] == beRed && !has_red) colors[c] = beNone;
+    if(colors[c] == beBlue && !has_blue) colors[c] = beNone;
     }
   auto res = colors[c];
-  if(res && colors_swapped) res = 3 - res;
+  if(res == beRed && colors_swapped) res = bePower;
+  else if(res == bePower && colors_swapped) res = beRed;
+  else if(res == beBlue && colors_swapped) res = beStay;
+  else if(res == beStay && colors_swapped) res = beBlue;
   return res;
   }
 
@@ -578,29 +618,6 @@ string color_to_str(unsigned col) {
   return buf;
   }
 
-struct spell {n
-  /* unidentified name */
-  polystring color;
-  /* color */
-  unsigned color_value;
-  /* identified name -- scrambled */
-  polystring caption;
-  /* identified description -- scrambled */
-  polystring desc;
-  /* action performed on cast -- scrambled */
-  std::function<void()> action;
-  /* action id, for given color/index */
-  int action_id;
-  /* color id, for given action/caption/desc/inventory/identified */
-  int color_id;
-  /* number of spells of this color in inventory */
-  int inventory;
-  /* are spells of this color identified? */
-  bool identified;
-  /* the Greek letter representing this spell */
-  string greek;
-  };
-
 vector<tile> drawn;
 vector<tile> deck;
 vector<tile> discard;
@@ -610,8 +627,6 @@ array<int, 3> stacked_mults;
 
 void spell_message(const string&);
 string last_spell_effect;
-
-extern vector<spell> spells;
 
 tile empty_tile(0, sp::notile);
 
@@ -635,7 +650,7 @@ string power_description(const tile &t) {
     int qty = 0;
     for(auto p: artifacts[t.special]) {
       if(qty) ss << "; "; qty++;
-      ss << power_description(gsp(p), 1);
+      ss << power_description(gsp(p), t.rarity);
       }
     return ss.str();
     }
@@ -645,8 +660,9 @@ string power_description(const tile &t) {
 string short_desc(const tile& t) {
   auto& s = gsp(t);
   string out = s.caption;
-  if(t.rarity == 2) out = "Rare " + out;
-  if(t.rarity == 3) out = "Epic " + out;
+  if(t.rarity == 2) out = str_rare->get() + " " + out;
+  if(t.rarity == 3) out = str_epic->get() + " " + out;
+  if(t.rarity == 4) out = str_legendary->get() + " " + out;
   out += " ";
   out += t.letter;
   out += to_string(t.value);
@@ -660,7 +676,9 @@ string tile_desc(const tile& t) {
   cap += " ";
   cap += t.letter;
   cap += to_string(t.value);
-  if(t.special >= sp::first_artifact)
+  if(t.special >= sp::first_artifact && t.rarity == 2)
+    out = "<b><font color='#FFA500'>" + string(str_legendary) + " " + cap + ": </font></b>";
+  else if(t.special >= sp::first_artifact)
     out = "<b><font color='#FFD500'>" + cap + ": </font></b>";
   else if(t.rarity == 1)
     out = "<b>" + cap + ": </b>";
@@ -668,6 +686,8 @@ string tile_desc(const tile& t) {
     out = "<b><font color='#4040FF'>" + string(str_rare) + " " + cap + ": </font></b>";
   else if(t.rarity == 3)
     out = "<b><font color='#FF40FF'>" + string(str_epic) + " " + cap + ": </font></b>";
+  else if(t.rarity == 4)
+    out = "<b><font color='#FFA500'>" + string(str_legendary) + " " + cap + ": </font></b>";
   out += power_description(t);
   if(t.price) out += " (" + to_string(t.price) + " 🪙)";
   return out;
@@ -678,7 +698,7 @@ bool has_power(const tile& t, sp which, int& val) {
   if(t.special == which) { val = s.value * t.rarity; return true; }
   if(t.special >= sp::first_artifact) {
     const auto& artifact = artifacts[t.special];
-    for(auto w: artifact) if(w == which) { val = gsp(w).value; return true; }
+    for(auto w: artifact) if(w == which) { val = gsp(w).value * t.rarity; return true; }
     }
   return false;
   }
@@ -986,30 +1006,32 @@ void compute_score() {
         if(!b) { if(ways & 1) sooth++; if(ways & 2) rsooth++; }
         };
 
-      if(has_power(b, sp::tricky, val)) has_tricky = true;
-      if(has_power(b, sp::soothing, val)) qsooth = max(qsooth, val);
-      if(has_power(b, sp::reversing, val)) directions = 2;
-      if(has_power(b, sp::bending, val)) next = next.mirror();
-      if(has_power(b, sp::portal, val)) { at = portals.at(at); ev.used_tiles.insert(at); needed.erase(at); }
-      if(has_power(b, sp::premium, val)) affect_mul(true);
-      if(has_power(b, sp::horizontal, val)) affect_mul(next.x);
-      if(has_power(b, sp::vertical, val)) affect_mul(next.y);
-      if(has_power(b, sp::naughty, val)) { naughtymul += val; naughtysooth++; }
-      if(has_power(b, sp::red, val)) affect_mul(get_color(at) == 1);
-      if(has_power(b, sp::blue, val)) affect_mul(get_color(at) == 2);
-      if(has_power(b, sp::initial, val)) { affect_mul(index == 0, 1); }
-      if(has_power(b, sp::final, val)) { affect_mul(index == 0, 2); }
-      if(has_power(b, sp::redrawing, val)) { ev.qredraw += val; }
-      if(has_power(b, sp::wizard, val)) { ev.qwizard += val; }
-      if(has_power(b, sp::bending, val))
+      auto b1 = b; if(get_color(at) == bePower) b1.rarity++;
+
+      if(has_power(b1, sp::tricky, val)) has_tricky = true;
+      if(has_power(b1, sp::soothing, val)) qsooth = max(qsooth, val);
+      if(has_power(b1, sp::reversing, val)) directions = 2;
+      if(has_power(b1, sp::bending, val)) next = next.mirror();
+      if(has_power(b1, sp::portal, val)) { at = portals.at(at); ev.used_tiles.insert(at); needed.erase(at); }
+      if(has_power(b1, sp::premium, val)) affect_mul(true);
+      if(has_power(b1, sp::horizontal, val)) affect_mul(next.x);
+      if(has_power(b1, sp::vertical, val)) affect_mul(next.y);
+      if(has_power(b1, sp::naughty, val)) { naughtymul += val; naughtysooth++; }
+      if(has_power(b1, sp::red, val)) affect_mul(get_color(at) == beRed);
+      if(has_power(b1, sp::blue, val)) affect_mul(get_color(at) == beBlue);
+      if(has_power(b1, sp::initial, val)) { affect_mul(index == 0, 1); }
+      if(has_power(b1, sp::final, val)) { affect_mul(index == 0, 2); }
+      if(has_power(b1, sp::redrawing, val)) { ev.qredraw += val; }
+      if(has_power(b1, sp::wizard, val)) { ev.qwizard += val; }
+      if(has_power(b1, sp::bending, val))
         affect_mul(board.count(at-coord(1,0)) && board.count(at+coord(1,0)) && board.count(at-coord(0,1)) && board.count(at+coord(0,1)));
 
       auto lang = get_language(b, val);
       if(lang) { polyglot.insert(lang); affect_mul(not_in_base(b.letter)); }
 
       at = at + next;
-      if(has_power(b, sp::final, val)) mul += val;
-      if(has_power(b, sp::initial, val)) rmul += val;
+      if(has_power(b1, sp::final, val)) mul += val;
+      if(has_power(b1, sp::initial, val)) rmul += val;
       index++;
       if(has_tricky && board.count(at) && !old_tricks.count(allword)) {
         for(int rd=0; rd<directions; rd++) for(auto l: polyglot) {
@@ -1025,10 +1047,10 @@ void compute_score() {
             }
           }
         }
-      if(has_power(b, sp::final, val)) mul -= val;
-      if(has_power(b, sp::initial, val)) rmul -= val;
-      if(has_power(b, sp::final, val)) affect_mul(!board.count(at), 1);
-      if(has_power(b, sp::initial, val)) affect_mul(!board.count(at), 2);
+      if(has_power(b1, sp::final, val)) mul -= val;
+      if(has_power(b1, sp::initial, val)) rmul -= val;
+      if(has_power(b1, sp::final, val)) affect_mul(!board.count(at), 1);
+      if(has_power(b1, sp::initial, val)) affect_mul(!board.count(at), 2);
       }
     if(needed.empty()) ev.valid_move = true;
     bool is_legal = false;
@@ -1064,6 +1086,38 @@ void compute_score() {
 
   if(cash + ev.total_score < tax()) { scoring << "<br/>" << str_not_enough; ev.valid_move = false; }
 
+  for(auto ut: just_placed) {
+    auto c =get_color(ut);
+    switch(c) {
+      case beRed:
+        if(has_power(board.at(ut), sp::red))
+          scoring << "<br/>" << short_desc(board.at(ut)) << " uses its Red power";
+        else
+          scoring << "<br/>" << short_desc(board.at(ut)) << " has no Red power";
+        break;
+      case beBlue:
+        if(has_power(board.at(ut), sp::blue))
+          scoring << "<br/>" << short_desc(board.at(ut)) << " uses its Blue power";
+        else
+          scoring << "<br/>" << short_desc(board.at(ut)) << " has no Blue power";
+        break;
+      case beStay:
+        scoring << "<br/>" << short_desc(board.at(ut)) << " stays on the board (and is permanently removed from your deck)";
+        break;
+      case bePower: {
+        auto x = board.at(ut);
+        scoring << "<br/>" << short_desc(x);
+        x.rarity++;
+        scoring << " acts as " << tile_desc(x);
+        break;
+        }
+      default: ;
+      }
+    if(c >= beSpell) {
+      scoring << "<br/>" << short_desc(board.at(ut)) << " gains " << spell_desc(c - beSpell);
+      }
+    }
+
   ev.current_scoring = scoring.str();
   };
 
@@ -1092,10 +1146,10 @@ void draw_board() {
     string s = " onclick = 'drop_hand_on(" + to_string(x) + "," + to_string(y) + ")'";
     render_tile(p, x*lsize, y*lsize, empty_tile, s);
     int c = get_color({x, y});
-    if(c) {
+    if(c == beRed || c == beBlue) {
       style bred(0, 0xFFFF0000, 0);
       style bblue(0, 0xFF0000FF, 0);
-      path pa(c == 1 ? bred : bblue);
+      path pa(c == beRed ? bred : bblue);
       pa.add(vec(x*lsize+lsize/2, y*lsize+lsize/4));
       pa.add(vec(x*lsize+lsize/4, y*lsize+lsize/2));
       pa.add(vec(x*lsize+lsize/2, y*lsize+lsize*3/4));
@@ -1104,6 +1158,30 @@ void draw_board() {
       pa.cycled = true;
       p += pa;
       }
+
+    font ff = makefont("DejaVuSans-Bold.ttf", ";font-family:'DejaVu Sans';font-weight:bold");
+    if(c == bePower) {
+      style bpower(0, 0xFF408040, 0);
+      text t1(bpower, ff, vec(x*lsize+lsize*.5, y*lsize+lsize*.4), center, lsize*.75, "+");
+      t1.onclick = s;
+      p += t1;
+      }
+
+    if(c == beStay) {
+      style bstay(0, 0xFF303030, 0);
+      text t1(bstay, ff, vec(x*lsize+lsize*.5, y*lsize+lsize*.4), center, lsize*.75, "⨯");
+      t1.onclick = s;
+      p += t1;
+      }
+
+    if(c >= beSpell) {
+      spell& sp = spells[c - beSpell];
+      style bpower(0, 0xFF000000 | sp.color_value, 0);
+      text t1(bpower, ff, vec(x*lsize+lsize*.5, y*lsize+lsize*.4), center, lsize*.5, sp.greek);
+      t1.onclick = s;
+      p += t1;
+      }
+
     }
 
   for(int y=miny; y<maxy; y++)
@@ -1670,31 +1748,36 @@ void accept_move() {
 
   for(auto& p: ev.used_tiles) {
     auto& b = board.at(p);
+    auto b1 = b; if(get_color(p) == bePower) b1.rarity++;
     auto& sp = gsp(b);
     int val = sp.value * b.rarity;
-    if(has_power(b, sp::rich, val)) qshop += val;
-    if(has_power(b, sp::drawing, val)) qdraw += val;
-    if(has_power(b, sp::teacher, val)) teach += val;
-    if(has_power(b, sp::trasher, val)) copies_unused--;
-    if(has_power(b, sp::multitrasher, val)) copies_unused--;
-    if(has_power(b, sp::duplicator, val)) copies_used += val;
-    if(has_power(b, sp::retain, val)) retain += val;
-    if(has_power(b, sp::delayed, val)) stacked_mults[(roundindex + 1)%3] += val;
+    if(has_power(b1, sp::rich, val)) qshop += val;
+    if(has_power(b1, sp::drawing, val)) qdraw += val;
+    if(has_power(b1, sp::teacher, val)) teach += val;
+    if(has_power(b1, sp::trasher, val)) copies_unused--;
+    if(has_power(b1, sp::multitrasher, val)) copies_unused--;
+    if(has_power(b1, sp::duplicator, val)) copies_used += val;
+    if(has_power(b1, sp::retain, val)) retain += val;
+    if(has_power(b1, sp::delayed, val)) stacked_mults[(roundindex + 1)%3] += val;
     }
 
   for(auto& p: just_placed) {
     auto& b = board.at(p);
+    auto col = get_color(p);
     bool other_end = has_power(b, sp::portal) && p < portals.at(p);
     if(b.price && !other_end) add_to_log("bought: "+short_desc(b)+ " for " + to_string(b.price) + ": " + power_description(b));
     add_to_log("on (" + to_string(p.x) + "," + to_string(p.y) + "): " + short_desc(board.at(p)));
     b.price = 0;
     int selftrash = 0;
     if(has_power(b, sp::trasher)) selftrash = 1;
-    if(has_power(b, sp::duplicator, selftrash)) selftrash++;
+    if(col == beStay) selftrash++;
+    if(has_power(b, sp::duplicator)) selftrash++;
     if(!other_end) for(int i=selftrash; i<copies_used; i++) discard.push_back(b);
     bool keep = false;
     for(sp x: {sp::bending, sp::portal, sp::reversing}) if(has_power(b, x)) keep = true;
     if(get_language(b)) keep = true;
+    if(col == beStay) keep = true;
+    if(col >= beSpell) spells[col - beSpell].inventory++;
     if(!keep) keep = under_radiation(p);
     if(!keep)
       b.special = sp::placed;
@@ -1856,9 +1939,9 @@ vector<spell> spells = {
      drawn.erase(drawn.begin());
      spell_message(str);
      }},
-  {"Violet", 0xFF20FF, "Swap", "Swap the red and blue symbols.", [] {
+  {"Violet", 0xFF20FF, "Swap", "Swap red/power and blue/stay symbols.", [] {
      colors_swapped = !colors_swapped;
-     spell_message("You swap the colors on board." + in_pl("Zamieniasz kolory na planszy."));
+     spell_message("You swap the spots on board." + in_pl("Zamieniasz miejsca na planszy."));
     }},
   {"Black", 0x505050, "Trash", "Trash the topmost tile.", [] {
     string str = ("You trash " + in_pl("Wyrzuczasz "))->get() + short_desc(drawn[0]) + ".";
