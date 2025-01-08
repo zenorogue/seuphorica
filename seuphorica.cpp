@@ -432,7 +432,7 @@ vector<special> specials = {
   {"Redrawing" + in_pl("Ciągnące"),
    "gives you %d redraw Spells when used, for every word it is used in"
    + in_pl("daje Ci %d Czary Ciągnięcia przy użyciu, za każde słowo"),
-   3, 0xFF502050, 0xFFFFFFFF},
+   2, 0xFF502050, 0xFFFFFFFF},
 
   {"Delayed" + in_pl("Opóźnione"),
    "%+d multiplier two turns later"
