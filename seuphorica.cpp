@@ -1105,30 +1105,30 @@ void compute_score() {
     switch(c) {
       case beRed:
         if(has_power(board.at(ut), sp::red))
-          scoring << "<br/>" << short_desc(board.at(ut)) << " uses its Red power";
+          scoring << "<br/>" << short_desc(board.at(ut)) << (" uses its Red power" + in_pl(" używa Czerwonej mocy"));
         else
-          scoring << "<br/>" << short_desc(board.at(ut)) << " has no Red power";
+          scoring << "<br/>" << short_desc(board.at(ut)) << (" has no Red power" + in_pl(" nie ma Czerwonej mocy"));
         break;
       case beBlue:
         if(has_power(board.at(ut), sp::blue))
-          scoring << "<br/>" << short_desc(board.at(ut)) << " uses its Blue power";
+          scoring << "<br/>" << short_desc(board.at(ut)) << (" uses its Blue power" + in_pl(" używa Niebieskiej mocy"));
         else
-          scoring << "<br/>" << short_desc(board.at(ut)) << " has no Blue power";
+          scoring << "<br/>" << short_desc(board.at(ut)) << (" has no Blue power" + in_pl(" nie ma Niebieskiej mocy"));
         break;
       case beStay:
-        scoring << "<br/>" << short_desc(board.at(ut)) << " stays on the board (and is permanently removed from your deck)";
+        scoring << "<br/>" << short_desc(board.at(ut)) << (" stays on the board (and is permanently removed from your deck)" + in_pl(" zostaje na planszy (i jest trwale usunięte z talii)"));
         break;
       case bePower: {
         auto x = board.at(ut);
         scoring << "<br/>" << short_desc(x);
         x.rarity++;
-        scoring << " acts as " << tile_desc(x);
+        scoring << (" acts as " + in_pl(" działa jako ")) << tile_desc(x);
         break;
         }
       default: ;
       }
     if(c >= beSpell) {
-      scoring << "<br/>" << short_desc(board.at(ut)) << " gains " << spell_desc(c - beSpell);
+      scoring << "<br/>" << short_desc(board.at(ut)) << (" gains " + in_pl(" zdobywa ")) << spell_desc(c - beSpell);
       }
     }
 
