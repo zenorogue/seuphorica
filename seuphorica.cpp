@@ -61,12 +61,13 @@ language polski("polski", "SEUFORIKA", "slowa.txt", "AĄBCĆDEĘFGHIJKLŁMNŃOÓ
 language deutsch("deutsch", "SEUFORIKA", "german.txt", "ABCDEFGHIJKLMNOPQRSTUVWXYZÄÜÖ", "🇩🇪");
 language francais("français", "SEUFORICA", "french.txt", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "🇫🇷");
 language espanol("español", "SEUFORICA", "fise-2.txt", "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ", "🇪🇸");
+language portugues_br("português (br)", "SEUFORICA", "ptbr.txt", "ABCDEFGHIJLMNOPQRSTUVXZÇ", "🇧🇷");
 
 language *current = &english;
 
 set<language*> polyglot_languages = {};
 
-vector<language*> languages = {&english, &francais, &deutsch, &espanol, &polski};
+vector<language*> languages = {&english, &francais, &deutsch, &espanol, &polski, &portugues_br};
 
 language::language(const string& name, const string& gamename, const string& fname, const string& alph, const string& flag) : name(name), gamename(gamename), fname(fname), flag(flag) {
   int i = 0;
@@ -205,6 +206,7 @@ halftrans in_pl(polystring x) { return halftrans(&polski, x); }
 halftrans in_de(polystring x) { return halftrans(&deutsch, x); }
 halftrans in_fr(polystring x) { return halftrans(&francais, x); }
 halftrans in_es(polystring x) { return halftrans(&espanol, x); }
+halftrans in_ptbr(polystring x) { return halftrans(&portugues_br, x); }
 
 polystring operator + (const polystring& s, const halftrans& h) { polystring res; (shared_ptr<polystring_base>&)res = make_shared<translation> (h.l, h.in_l, s); return res; }
 
@@ -276,7 +278,8 @@ polystring str_restrict_example =
   );
 polystring str_special_change = "Special letters can change the language to:" + in_pl("Specjalne litery zmieniają język na:");
 polystring str_naughty = "naughty tiles" + in_pl("niegrzeczne płytki");
-polystring str_welcome = "Welcome to Seuphorica!" + in_pl("Witaj w Seuforice!") + in_es("Bienvenidos a Seuforica!") + in_de("Willkommen bei Seuforica!") + in_fr("bienvenue à Seuforica!");
+polystring str_welcome = "Welcome to Seuphorica!" + in_pl("Witaj w Seuforice!") + in_es("Bienvenidos a Seuforica!") + in_de("Willkommen bei Seuforica!") + in_fr("bienvenue à Seuforica!")
+  +in_ptbr("Bem-vindo à Seuforica!");
 polystring str_standard_game = "standard game" + in_pl("gra standardowa");
 polystring str_exp_standard_game = "All non-controversial special powers can appear in the game. Play as long as you can!"
   + in_pl("Wszystkie niekontrowersyjne moce mogą pojawić się w grze. Graj tak długo, jak chcesz!");
@@ -470,7 +473,7 @@ enum class sp {
 
   naughty,
 
-  english, deutsch, francais, espanol, polski,
+  english, deutsch, francais, espanol, polski, portugues_br,
 
   first_artifact
   };
@@ -721,6 +724,7 @@ language *get_language(sp s) {
   if(s == sp::deutsch) return &deutsch;
   if(s == sp::francais) return &francais;
   if(s == sp::espanol) return &espanol;
+  if(s == sp::portugues_br) return &portugues_br;
   return nullptr;
   }
 
@@ -730,6 +734,7 @@ language *get_language(tile &t, int& val) {
   if(has_power(t, sp::deutsch, val)) return &deutsch;
   if(has_power(t, sp::francais, val)) return &francais;
   if(has_power(t, sp::espanol, val)) return &espanol;
+  if(has_power(t, sp::portugues_br, val)) return &portugues_br;
   return nullptr;
   }
 

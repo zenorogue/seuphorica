@@ -55,6 +55,7 @@ polski: https://sjp.pl (GPL 2 / Creative Commons Attribution 4.0 International)
 deutsch: https://github.com/enz/german-wordlist (CC-1.0)
 français: https://github.com/Thecoolsim/French-Scrabble-ODS8/blob/main/French%20ODS%20dictionary.txt
 español: https://github.com/kamilmielnik/scrabble-dictionaries/blob/master/spanish/fise-2.txt
+português brasileiro: https://www.ime.usp.br/~pf/dicios/
 
 Naughty word lists based on:
 https://www.cs.cmu.edu/~biglou/resources/bad-words.txt
