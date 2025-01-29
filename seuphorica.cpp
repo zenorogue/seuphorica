@@ -536,6 +536,10 @@ struct coord {
   coord mirror() { return coord(y, x); }
   };
 
+int gmod(int a, int b) {
+  a %= b; if(a<0) a += b; return a;
+  }
+
 set<coord> just_placed;
 
 map<coord, tile> board;
@@ -740,6 +744,19 @@ language *get_language(tile &t, int& val) {
 
 language *get_language(tile &t) {
   int dummy; return get_language(t, dummy);
+  }
+
+string alphashift(tile& t, int val) {
+  auto lang = get_language(t);
+  if(!lang) lang = current;
+  auto& a = lang->alphabet;
+  int size = a.size();
+
+  for(int i=0; i<size; i++)
+    if(a[i] == t.letter)
+      return a[gmod(i + val, size)];
+
+  return t.letter;
   }
 
 void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
@@ -2033,14 +2050,8 @@ vector<spell> spells = {
     spell_message(str);
     }},
   {"Yellow" + in_pl("Żółć"), 0xFFFF20, "Morph" + in_pl("Morf"), "Change the topmost tile to the next letter in the alphabet." + in_pl("Zmienia najwyższą płytkę na kolejną literę w alfabecie."), []{
-    auto lang = get_language(drawn[0]);
-    if(!lang) lang = current;
     string old = short_desc(drawn[0]);
-    for(int i=0; i<int(lang->alphabet.size()); i++)
-      if(lang->alphabet[i] == drawn[0].letter) {
-        drawn[0].letter = lang->alphabet[(i+1) % lang->alphabet.size()];
-        break;
-        }
+    drawn[0].letter = alphashift(drawn[0], 1);
     string str = ("You morph " + old + " to " + short_desc(drawn[0]) + ".") + in_pl("Przekształcasz: " + old + " -> " + short_desc(drawn[0]));
     spell_message(str);
     }},
