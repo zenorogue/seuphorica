@@ -1721,7 +1721,7 @@ void restart(const char *s, const char *poly, const char *_restricted) {
     }
   for(int i=0; i<(int) sp::first_artifact; i++) if(special_allowed[i]) {
     auto lang = get_language(sp(i));
-    if(!lang) return;
+    if(!lang) continue;
     polyglot_languages.insert(lang);
     }
 
