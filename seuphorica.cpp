@@ -459,6 +459,7 @@ vector<special> specials = {
   {"Français", "les mots en français sont acceptés. Marquez deux fois si valide dans les deux langues. %+d si cette lettre n'est pas dans la langue de base", 3, 0xFFFFFF80, 0xFF000000},
   {"Español", "Se aceptan palabras en español. Puntuación doble si es válido en ambos idiomas. %+d si esta carta no está en lenguaje básico", 3, 0xFF400000, 0xFFFFFFFF},
   {"Polskie", "słowa po polsku są akceptowane. Wynik liczony dwa razy, jeśli poprawne słowo w obu językach. %+d jeśli ta litera nie jest w języku podstawowym", 3, 0xFFFFFF80, 0xFF000000},
+  {"Português", "palavras em português são aceitas. Pontue duas vezes se for válido em ambos os idiomas. %+d se esta letra não estiver em idioma básico", 3, 0xFF004000, 0xFFFFFFFF},
   };
 
 enum class sp {
