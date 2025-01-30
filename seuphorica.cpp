@@ -448,6 +448,11 @@ vector<special> specials = {
    + in_pl("mnożnik %+d za dwie kolejki"),
    2, 0xFFC04040, 0xFF400000},
 
+  {"Caesar" + in_pl("Cesarskie"),
+   "%+d multiplier if the word also contains C3"
+   + in_pl("mnożnik %+d jeśli słowo zawiera również C3"),
+   2, 0xFFC0C0C0, 0xFF404040},
+
   /* controversial */
   {"Naughty" + in_pl("Niegrzeczne"),
    "%+d multiplier when used in a naughty word" + in_pl("mnożnik %+d gdy użyte w niegrzecznym słowie"),
@@ -470,7 +475,7 @@ enum class sp {
   teacher, trasher, multitrasher, duplicator, retain,
   drawing, rich,
   radiating, tricky, soothing, wild, portal,
-  wizard, redrawing, delayed,
+  wizard, redrawing, delayed, caesar,
 
   naughty,
 
@@ -660,7 +665,11 @@ string power_description(const special& s, int rarity) {
   return buf;
   }
 
+bool has_power(const tile& t, sp which);
+string alphashift(const tile& t, int val);
+
 string power_description(const tile &t) {
+  string pow;
   if(t.special >= sp::first_artifact) {
     stringstream ss;
     int qty = 0;
@@ -668,9 +677,17 @@ string power_description(const tile &t) {
       if(qty) ss << "; "; qty++;
       ss << power_description(gsp(p), t.rarity);
       }
-    return ss.str();
+    pow = ss.str();
     }
-  return power_description(gsp(t), t.rarity);
+  else {
+    pow = power_description(gsp(t), t.rarity);
+    }
+  if(has_power(t, sp::caesar)) {
+    string cae = alphashift(t, 3);
+    auto pos = pow.find("C3");
+    if(pos != string::npos) pow.replace(pos, 3, cae);
+    }
+  return pow;
   }
 
 string short_desc(const tile& t) {
@@ -1023,6 +1040,8 @@ void compute_score() {
     struct eval_data_shared {
       int naughtymul = 0, naughtysooth = 0, qsooth = 0;
       int placed = 0, all = 0, start_delay = 0;
+      map<string, int> caesar_bonus;
+      set<string> letters_in_word;
       } eds;
 
     /* data in given direction (direct/reverse) */
@@ -1032,7 +1051,13 @@ void compute_score() {
       eval_data_directed() { mul = 1 + stacked_mults[roundindex % 3]; sooth = 0; }
 
       void evaluate(eval_data_shared& eds, language *l, stringstream& scoring, bool illegal) {
-        int mul1 = mul + eds.qsooth * sooth + (is_naughty(word, l) ? eds.naughtymul : eds.naughtysooth * sooth) - word_use_count[word];
+        int mul1 = mul;
+        mul1 += eds.qsooth * sooth;
+        mul1 += (is_naughty(word, l) ? eds.naughtymul : eds.naughtysooth * sooth);
+        mul1 -= word_use_count[word];
+        for(auto& [what, val]: eds.caesar_bonus) {
+          if(eds.letters_in_word.count(what)) mul1 += val;
+          }
         int score = eds.placed * eds.all * mul1;
 
         scoring << "<b>" << word << ":</b> " << eds.placed << "*" << eds.all << "*" << mul1 << " = " << score;
@@ -1051,6 +1076,7 @@ void compute_score() {
       auto& b = board.at(at);
       edd.word += b.letter;
       edr.word = b.letter + edr.word;
+      eds.letters_in_word.insert(b.letter);
       allword.push_back(at);
 
       if(just_placed.count(at)) eds.placed += b.value;
@@ -1080,6 +1106,7 @@ void compute_score() {
       if(has_power(b1, sp::initial, val)) { affect_mul(index == 0, 1); }
       if(has_power(b1, sp::final, val)) { affect_mul(index == 0, 2); }
       if(has_power(b1, sp::delayed, val)) { eds.start_delay += val; }
+      if(has_power(b1, sp::caesar, val)) { eds.caesar_bonus[alphashift(b1, 3)] += val; }
       if(has_power(b1, sp::bending, val))
         affect_mul(board.count(at-coord(1,0)) && board.count(at+coord(1,0)) && board.count(at-coord(0,1)) && board.count(at+coord(0,1)));
 
