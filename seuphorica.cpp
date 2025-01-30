@@ -314,7 +314,7 @@ polystring str_spells_need_identify =
 polystring str_spells_description =
   "Spells are found or gained via Wizard tiles. They can be cast at any time. Many of them affect your topmost tile, so remember to reorder your hand first! Spells cannot be cast if your hand is empty. Usually, you will not know what a spell does before you use it for the first time."
   + in_pl("Czary znajdujesz albo zdobywasz używając czarodziejskich płytek. Można ja rzucać w dowolnym momencie. Wiele z nich wpływa na najwyższą płytkę, także pamiętaj, by najpierw dobrze ustawić kolejność! Czarów nie można rzucać z pustą ręką. Zazwyczaj nie wiesz, co robi czar przed użyciem go po raz pierwszy.");
-
+polystring str_tile_on_board = "Tile on board: " + in_pl("Płytka na planszy: ");
 
 struct special {
   polystring caption;
@@ -325,9 +325,9 @@ struct special {
   };
 
 vector<special> specials = {
-  {"No Tile", "", 0, 0xFF000000, 0xFF000000}, 
-  {"Placed", "", 0, 0xFFFFFFFF, 0xFF000000},   
-  {"Standard" + in_pl("Standardowe"), 
+  {"No Tile", "", 0, 0xFF000000, 0xFF000000},
+  {"Placed", "no special properties" + in_pl("bez specjalnych własności") , 0, 0xFFFFFFFF, 0xFF000000},
+  {"Standard" + in_pl("Standardowe"),
    "no special properties" + in_pl("bez specjalnych własności"),
     0, 0xFFFFFF80, 0xFF000000},
 
@@ -1270,8 +1270,7 @@ void draw_board() {
 
   for(int y=miny; y<maxy; y++)
   for(int x=minx; x<maxx; x++) if(board.count({x, y})) {
-    string s ="";
-    if(just_placed.count({x, y})) s = " onclick = 'back_from_board(" + to_string(x) + "," + to_string(y) + ")'";
+    string s = " onclick = 'back_from_board(" + to_string(x) + "," + to_string(y) + ")'";
     render_tile(p, x*lsize, y*lsize, board.at({x,y}), s);
     }
 
@@ -1334,6 +1333,9 @@ void draw_board() {
     if(last_spell_effect != "") ss << last_spell_effect << "<br/>";
     if(identifications) ss << str_identifications << identifications << "<br/>";
     ss << "<br/>";
+    }
+  else if(last_spell_effect != "") {
+    ss << last_spell_effect << "<br/>";
     }
   ss << "</div>";
 
@@ -2124,6 +2126,25 @@ void spell_message(const string& s) {
   draw_board();
   }
 
+string powerup_help(coord at) {
+  auto col = get_color(at);
+  switch(col) {
+    case beNone:
+      return "nothing here";
+    case beRed:
+      return "red spot";
+    case beBlue:
+      return "blue spot";
+    case bePower:
+      return "power spot";
+    case beStay:
+      return "stay spot";
+    default: ;
+      if(col >= beSpell) return "spell: " + spell_desc(col - beSpell);
+      return "weird square";
+    }
+  }
+
 extern "C" {
   void start(bool mobile) { gameseed = time(NULL); init(mobile); }
   
@@ -2172,8 +2193,22 @@ extern "C" {
 
   void back_from_board(int x, int y) {
     coord c(x, y);
-    if(!just_placed.count(c)) return;
-    if(!board.count(c)) return;
+    if(!board.count(c)) {
+      last_spell_effect = powerup_help(c);
+      draw_board();
+      return;
+      }
+    if(!just_placed.count(c)) {
+      stringstream ss;
+      pic p;
+      auto& t = board.at(c);
+      render_tile(p, 0, 0, t, "");
+      string sts = SVG_to_string(p);
+      last_spell_effect = "<br/><b>" + str_tile_on_board->get() + "</b><br/>" + sts + " " + tile_desc(t) + " <br/>";
+      if(get_color(c)) last_spell_effect += powerup_help(c) + "<br/>";
+      draw_board();
+      return;
+      }
     empower(c, -1);
     if(has_power(board.at(c), sp::portal) && !portals.count(c)) placing_portal = false;
     drawn.insert(drawn.begin(), board.at(c));
