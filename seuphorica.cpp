@@ -2105,6 +2105,12 @@ void new_game() {
   for(int i=0; i<int(spells.size()); i++) spells[spells[i].action_id].color_id = i;
   last_spell_effect = "";
 
+  if(is_daily) {
+    int idval = spells[5].color_id;
+    spells[idval].identified = true;
+    spells[idval].inventory = 2;
+    }
+
   for(auto& x: stacked_mults) x = 0;
   identifications = 0;
   scry_active = false;
