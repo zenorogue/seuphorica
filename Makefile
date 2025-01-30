@@ -15,9 +15,11 @@ test: seuphorica.js
 	cp german.txt ~/public_html/seuphorica
 	cp french.txt ~/public_html/seuphorica
 	cp fise-2.txt ~/public_html/seuphorica
+	cp ptbr.txt ~/public_html/seuphorica
 	cp naughty-wordlist.txt ~/public_html/seuphorica
 	cp naughty-slowa.txt ~/public_html/seuphorica
 	cp naughty-german.txt ~/public_html/seuphorica
 	cp naughty-french.txt ~/public_html/seuphorica
 	cp naughty-fise-2.txt ~/public_html/seuphorica
+	cp naughty-ptbr.txt ~/public_html/seuphorica
 
