@@ -40,6 +40,9 @@ V17: more special spots on the map, repeatedly reused words now reduce multiplie
 
 V18: fixed (and nerfed the bonus to 50%) Delayed with multiple words; fixed some bugs with portals and power/stay spots
 
+V19: Portuguese version, new powers (Symmetric, Gigantic, Caesar), list of all powers shown in custom game, clicking on a tile on board now displays info about it,
+fixed a bug with Polish and German foreign tiles description being displayed incorrectly, made daily less swingy by starting with 2 id'ed id spells
+
 Plans: better dictionary, translate the game itself to more languages, multi-letters, drag and drop
 
 Click [this](https://zenorogue.github.io/seuphorica/) to play!
