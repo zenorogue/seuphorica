@@ -708,7 +708,7 @@ string short_desc(const tile& t) {
   string out = s.caption;
   if(t.rarity == 2) out = str_rare->get() + " " + out;
   if(t.rarity == 3) out = str_epic->get() + " " + out;
-  if(t.rarity == 4) out = str_legendary->get() + " " + out;
+  if(t.rarity >= 4) out = str_legendary->get() + " " + out;
   out += " ";
   out += t.letter;
   out += to_string(t.value);
@@ -732,7 +732,7 @@ string tile_desc(const tile& t) {
     out = "<b><font color='#4040FF'>" + string(str_rare) + " " + cap + ": </font></b>";
   else if(t.rarity == 3)
     out = "<b><font color='#FF40FF'>" + string(str_epic) + " " + cap + ": </font></b>";
-  else if(t.rarity == 4)
+  else if(t.rarity >= 4)
     out = "<b><font color='#FFA500'>" + string(str_legendary) + " " + cap + ": </font></b>";
   out += power_description(t);
   if(t.price) out += " (" + to_string(t.price) + " 🪙)";
@@ -796,6 +796,7 @@ void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
   int wide = 1;
   if(t.rarity == 2) lines = 0xFF4040FF, wide = 2;
   if(t.rarity == 3) lines = 0xFFFF80FF, wide = 2;
+  if(t.rarity >= 4) lines = 0x40FF80FF, wide = 2;
   if(t.special >= sp::first_artifact) lines = 0xFFFFD500, wide = 2;
   style b(lines, s.background, 1.5 * wide);
   style bempty(0xFF808080, 0xFF101010, 0.5);
