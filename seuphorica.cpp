@@ -316,6 +316,15 @@ polystring str_spells_description =
   + in_pl("Czary znajdujesz albo zdobywasz używając czarodziejskich płytek. Można ja rzucać w dowolnym momencie. Wiele z nich wpływa na najwyższą płytkę, także pamiętaj, by najpierw dobrze ustawić kolejność! Czarów nie można rzucać z pustą ręką. Zazwyczaj nie wiesz, co robi czar przed użyciem go po raz pierwszy.");
 polystring str_tile_on_board = "Tile on board: " + in_pl("Płytka na planszy: ");
 
+polystring str_acts_as = " acts as " + in_pl(" działa jako ");
+polystring str_gains = " gains " + in_pl(" zdobywa ");
+polystring str_uses_red = " uses its Red power" + in_pl(" używa Czerwonej mocy");
+polystring str_has_no_red = " has no Red power" + in_pl(" nie ma Czerwonej mocy");
+polystring str_uses_blue = " uses its Blue power" + in_pl(" używa Niebieskiej mocy");
+polystring str_has_no_blue = " has no Blue power" + in_pl(" nie ma Niebieskiej mocy");
+polystring str_stayson = " stays on the board (and is permanently removed from your deck)" + in_pl(" zostaje na planszy (i jest trwale usunięte z talii)");
+polystring str_powerlist = "List of all powers:" + in_pl("Lista wszystkich mocy:");
+
 struct special {
   polystring caption;
   polystring desc;
@@ -1174,31 +1183,31 @@ void compute_score() {
     switch(c) {
       case beRed:
         if(has_power(board.at(ut), sp::red))
-          scoring << "<br/>" << short_desc(board.at(ut)) << (" uses its Red power" + in_pl(" używa Czerwonej mocy"));
+          scoring << "<br/>" << short_desc(board.at(ut)) << str_uses_red;
         else
-          scoring << "<br/>" << short_desc(board.at(ut)) << (" has no Red power" + in_pl(" nie ma Czerwonej mocy"));
+          scoring << "<br/>" << short_desc(board.at(ut)) << str_has_no_red;
         break;
       case beBlue:
         if(has_power(board.at(ut), sp::blue))
-          scoring << "<br/>" << short_desc(board.at(ut)) << (" uses its Blue power" + in_pl(" używa Niebieskiej mocy"));
+          scoring << "<br/>" << short_desc(board.at(ut)) << str_uses_blue;
         else
-          scoring << "<br/>" << short_desc(board.at(ut)) << (" has no Blue power" + in_pl(" nie ma Niebieskiej mocy"));
+          scoring << "<br/>" << short_desc(board.at(ut)) << str_has_no_blue;
         break;
       case beStay:
-        scoring << "<br/>" << short_desc(board.at(ut)) << (" stays on the board (and is permanently removed from your deck)" + in_pl(" zostaje na planszy (i jest trwale usunięte z talii)"));
+        scoring << "<br/>" << short_desc(board.at(ut)) << str_stayson;
         break;
       case bePower: {
         auto& x = board.at(ut);
         empower(ut, -1);
         scoring << "<br/>" << short_desc(x);
         empower(ut, +1);
-        scoring << (" acts as " + in_pl(" działa jako ")) << tile_desc(x);
+        scoring << str_acts_as << tile_desc(x);
         break;
         }
       default: ;
       }
     if(c >= beSpell) {
-      scoring << "<br/>" << short_desc(board.at(ut)) << (" gains " + in_pl(" zdobywa ")) << spell_desc(c - beSpell);
+      scoring << "<br/>" << short_desc(board.at(ut)) << str_gains << spell_desc(c - beSpell);
       }
     }
 
