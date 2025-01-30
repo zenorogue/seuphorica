@@ -1122,8 +1122,8 @@ void compute_score() {
       if(has_power(b, sp::naughty, val)) { eds.naughtymul += val; eds.naughtysooth++; }
       if(has_power(b, sp::red, val)) affect_mul(get_color(at) == beRed);
       if(has_power(b, sp::blue, val)) affect_mul(get_color(at) == beBlue);
-      if(has_power(b, sp::initial, val)) { affect_mul(index == 0, 1); }
-      if(has_power(b, sp::final, val)) { affect_mul(index == 0, 2); }
+      if(has_power(b, sp::initial, val)) { affect_mul(eds.word_length == 0, 1); }
+      if(has_power(b, sp::final, val)) { affect_mul(eds.word_length == 0, 2); }
       if(has_power(b, sp::delayed, val)) { eds.start_delay += val; }
       if(has_power(b, sp::caesar, val)) { eds.caesar_bonus[alphashift(b, 3)] += val; }
       if(has_power(b, sp::bending, val))
