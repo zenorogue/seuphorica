@@ -1006,7 +1006,6 @@ void compute_score() {
   stringstream scoring;
   for(auto ss: starts) {
     auto at = ss.first, next = ss.second;
-    int placed = 0, all = 0, mul = 1 + stacked_mults[roundindex % 3], start_delay = 0;
     string word;
     set<coord> needed;
     for(auto p: just_placed) if(!has_power(board.at(p), sp::flying)) needed.insert(p);
@@ -1016,47 +1015,70 @@ void compute_score() {
     bool optional = board.count(at-next);
     vector<coord> allword;
     int rmul = 1 + stacked_mults[roundindex % 3];
-    int qsooth = 0;
     int sooth = 0, rsooth = 0;
-    int naughtymul = 0, naughtysooth = 0;
     set<language*> polyglot = { current };
-    string rword;
+
+    /* data shared between both directions */
+    struct eval_data_shared {
+      int naughtymul = 0, naughtysooth = 0, qsooth = 0;
+      int placed = 0, all = 0, start_delay = 0;
+      } eds;
+
+    /* data in given direction (direct/reverse) */
+    struct eval_data_directed {
+      int mul, sooth;
+      string word;
+      eval_data_directed() { mul = 1 + stacked_mults[roundindex % 3]; sooth = 0; }
+
+      void evaluate(eval_data_shared& eds, language *l, stringstream& scoring, bool illegal) {
+        int mul1 = mul + eds.qsooth * sooth + (is_naughty(word, l) ? eds.naughtymul : eds.naughtysooth * sooth) - word_use_count[word];
+        int score = eds.placed * eds.all * mul1;
+
+        scoring << "<b>" << word << ":</b> " << eds.placed << "*" << eds.all << "*" << mul1 << " = " << score;
+        if(l != current) scoring << " " << l->flag;
+        if(illegal) scoring << " <font color='#FF4040'>" << str_illegal << "</font>";
+        scoring << "<br/>";
+        ev.used_words.push_back(word);
+        ev.total_score += score;
+        ev.qdelay += eds.start_delay;
+        }
+      } edd, edr;
 
     while(board.count(at)) {
       needed.erase(at);
       ev.used_tiles.insert(at);
       auto& b = board.at(at);
-      word += b.letter;
-      rword = b.letter + rword;
+      edd.word += b.letter;
+      edr.word = b.letter + edr.word;
       allword.push_back(at);
 
-      if(just_placed.count(at)) placed += b.value;
+      if(just_placed.count(at)) eds.placed += b.value;
       else is_crossing = true;
 
-      all += b.value;
+      eds.all += b.value;
       int val = gsp(b).value * b.rarity;
 
       auto affect_mul = [&] (bool b, int ways = 3) {
-        if(b) { if(ways & 1) mul += val; if(ways & 2) rmul += val; }
-        if(!b) { if(ways & 1) sooth++; if(ways & 2) rsooth++; }
+        if(b) { if(ways & 1) edd.mul += val; if(ways & 2) edr.mul += val; }
+        if(!b) { if(ways & 1) edd.sooth++; if(ways & 2) edr.sooth++; }
         };
 
       auto b1 = b; if(get_color(at) == bePower) b1.rarity++;
 
       if(has_power(b1, sp::tricky, val)) has_tricky = true;
-      if(has_power(b1, sp::soothing, val)) qsooth = max(qsooth, val);
+      if(has_power(b1, sp::soothing, val)) eds.qsooth = max(eds.qsooth, val);
       if(has_power(b1, sp::reversing, val)) directions = 2;
       if(has_power(b1, sp::bending, val)) next = next.mirror();
       if(has_power(b1, sp::portal, val)) { at = portals.at(at); ev.used_tiles.insert(at); needed.erase(at); }
       if(has_power(b1, sp::premium, val)) affect_mul(true);
       if(has_power(b1, sp::horizontal, val)) affect_mul(next.x);
       if(has_power(b1, sp::vertical, val)) affect_mul(next.y);
-      if(has_power(b1, sp::naughty, val)) { naughtymul += val; naughtysooth++; }
+      if(has_power(b1, sp::naughty, val)) { eds.naughtymul += val; eds.naughtysooth++; }
       if(has_power(b1, sp::red, val)) affect_mul(get_color(at) == beRed);
       if(has_power(b1, sp::blue, val)) affect_mul(get_color(at) == beBlue);
       if(has_power(b1, sp::initial, val)) { affect_mul(index == 0, 1); }
       if(has_power(b1, sp::final, val)) { affect_mul(index == 0, 2); }
-      if(has_power(b1, sp::delayed, val)) { start_delay += val; }
+      if(has_power(b1, sp::delayed, val)) { eds.start_delay += val; }
       if(has_power(b1, sp::bending, val))
         affect_mul(board.count(at-coord(1,0)) && board.count(at+coord(1,0)) && board.count(at-coord(0,1)) && board.count(at+coord(0,1)));
 
@@ -1064,27 +1086,20 @@ void compute_score() {
       if(lang) { polyglot.insert(lang); affect_mul(not_in_base(b.letter)); }
 
       at = at + next;
-      if(has_power(b1, sp::final, val)) mul += val;
-      if(has_power(b1, sp::initial, val)) rmul += val;
+      if(has_power(b1, sp::final, val)) edd.mul += val;
+      if(has_power(b1, sp::initial, val)) edr.mul += val;
       index++;
       if(has_tricky && board.count(at) && !old_tricks.count(allword)) {
         for(int rd=0; rd<directions; rd++) for(auto l: polyglot) {
-          auto& nword = rd ? rword : word;
-          auto& nmul = rd ? rmul : mul;
-          if(ok(word, index, l)) {
-            int mul1 = nmul + qsooth * sooth + (is_naughty(word, l) ? naughtymul : naughtysooth * sooth) - word_use_count[word];
-            scoring << "<b>" << nword << ":</b> " << placed << "*" << all << "*" << mul1 << " = " << placed*all*mul1;
-            if(l != current) scoring << " " << l->flag;
-            scoring << "<br/>";
-            ev.total_score += placed * all * mul1;
+          auto& mdc = rd ? edr : edd;
+          if(ok(mdc.word, index, l)) {
+            mdc.evaluate(eds, l, scoring, false);
             ev.new_tricks.insert(allword);
-            ev.used_words.push_back(word);
-            ev.qdelay += start_delay;
             }
           }
         }
-      if(has_power(b1, sp::final, val)) mul -= val;
-      if(has_power(b1, sp::initial, val)) rmul -= val;
+      if(has_power(b1, sp::final, val)) edd.mul -= val;
+      if(has_power(b1, sp::initial, val)) edr.mul -= val;
       if(has_power(b1, sp::final, val)) affect_mul(!board.count(at), 1);
       if(has_power(b1, sp::initial, val)) affect_mul(!board.count(at), 2);
       }
@@ -1092,28 +1107,17 @@ void compute_score() {
     bool is_legal = false;
 
     for(int rd=0; rd<directions; rd++) for(auto l: polyglot) {
-      auto& nword = rd ? rword : word;
-      auto& nmul = rd ? rmul : mul;
-      if(ok(nword, index, l)) {
-        int mul1 = nmul + qsooth * sooth + (is_naughty(word, l) ? naughtymul : naughtysooth * sooth) - word_use_count[nword];
+      auto& mdc = rd ? edr : edd;
+      if(ok(mdc.word, index, l)) {
+        mdc.evaluate(eds, l, scoring, false);
         is_legal = true;
-        scoring << "<b>" << nword << ":</b> " << placed << "*" << all << "*" << mul1 << " = " << placed*all*mul1;
-        if(l != current) scoring << " " << l->flag;
-        scoring << "<br/>";
-        ev.used_words.push_back(nword);
-        ev.total_score += placed * all * mul1;
-        ev.qdelay += start_delay;
         }
       }
 
     if(!is_legal && optional) continue;
     if(!is_legal) {
-      int mul1 = mul + qsooth * sooth - word_use_count[word];
-      scoring << "<b>" << word << ":</b> " << placed << "*" << all << "*" << mul1 << " = " << placed*all*mul1;
-      scoring << " <font color='#FF4040'>" << str_illegal << "</font>"; illegal_words = true;
-      scoring << "<br/>";
-      ev.used_words.push_back(word);
-      ev.qdelay += start_delay;
+      edd.evaluate(eds, current, scoring, true);
+      illegal_words = true;
       }
     }
 
