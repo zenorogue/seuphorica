@@ -1044,7 +1044,6 @@ void compute_score() {
     string word;
     set<coord> needed;
     for(auto p: just_placed) if(!has_power(board.at(p), sp::flying)) needed.insert(p);
-    int index = 0;
     bool has_tricky = false;
     int directions = 1;
     bool optional = board.count(at-next);
@@ -1057,6 +1056,7 @@ void compute_score() {
     struct eval_data_shared {
       int naughtymul = 0, naughtysooth = 0, qsooth = 0;
       int placed = 0, all = 0, start_delay = 0;
+      int word_length = 0;
       map<string, int> caesar_bonus;
       set<string> letters_in_word;
       } eds;
@@ -1066,6 +1066,10 @@ void compute_score() {
       int mul, sooth;
       string word;
       eval_data_directed() { mul = 1 + stacked_mults[roundindex % 3]; sooth = 0; }
+
+      bool ok(eval_data_shared& eds, language *l) {
+        return ::ok(word, eds.word_length, l);
+        }
 
       void evaluate(eval_data_shared& eds, language *l, stringstream& scoring, bool illegal) {
         int mul1 = mul;
@@ -1131,11 +1135,11 @@ void compute_score() {
       at = at + next;
       if(has_power(b, sp::final, val)) edd.mul += val;
       if(has_power(b, sp::initial, val)) edr.mul += val;
-      index++;
+      eds.word_length++;
       if(has_tricky && board.count(at) && !old_tricks.count(allword)) {
         for(int rd=0; rd<directions; rd++) for(auto l: polyglot) {
           auto& mdc = rd ? edr : edd;
-          if(ok(mdc.word, index, l)) {
+          if(mdc.ok(eds, l)) {
             mdc.evaluate(eds, l, scoring, false);
             ev.new_tricks.insert(allword);
             }
@@ -1151,7 +1155,7 @@ void compute_score() {
 
     for(int rd=0; rd<directions; rd++) for(auto l: polyglot) {
       auto& mdc = rd ? edr : edd;
-      if(ok(mdc.word, index, l)) {
+      if(mdc.ok(eds, l)) {
         mdc.evaluate(eds, l, scoring, false);
         is_legal = true;
         }
