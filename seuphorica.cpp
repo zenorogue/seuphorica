@@ -1143,7 +1143,7 @@ void compute_score() {
         mul1 += (is_naughty(word, l) ? eds.naughtymul : eds.naughtysooth * sooth);
         mul1 -= word_use_count[word];
         for(auto& [what, val]: eds.caesar_bonus) {
-          if(eds.letters_in_word.count(what)) mul1 += val;
+          if(eds.letters_in_word.count(what)) mul1 += val; else mul1 += eds.qsooth;
           }
         for(auto& [pos, val]: eds.symmetric_at) {
           if(eds.symmetric_at.count(eds.word_length-1-pos)) mul1 += val; else mul1 += eds.qsooth;
