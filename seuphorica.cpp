@@ -655,7 +655,7 @@ special &gsp(const tile &t) {
   }
 
 string power_description(const special& s, int rarity) {
-  char buf[127];
+  char buf[500];
   sprintf(buf, s.desc->get().c_str(), s.value * rarity);
   return buf;
   }
