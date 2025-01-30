@@ -1706,6 +1706,10 @@ void review_new_game() {
   ss << str_restrict_example;
   ss << "<br/><br/>";
 
+  ss << str_powerlist;
+  for(int i=2; i<(int)sp::first_artifact; i++) { if(i) ss << ","; ss << " " << specials[i].caption; }
+  ss << "<br/><br/>";
+
   string pres;
 
   ss << str_special_change << "<br>";
