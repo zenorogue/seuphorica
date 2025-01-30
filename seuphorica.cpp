@@ -732,7 +732,7 @@ language *get_language(sp s) {
   return nullptr;
   }
 
-language *get_language(tile &t, int& val) {
+language *get_language(const tile &t, int& val) {
   if(has_power(t, sp::english, val)) return &english;
   if(has_power(t, sp::polski, val)) return &polski;
   if(has_power(t, sp::deutsch, val)) return &deutsch;
@@ -742,11 +742,11 @@ language *get_language(tile &t, int& val) {
   return nullptr;
   }
 
-language *get_language(tile &t) {
+language *get_language(const tile &t) {
   int dummy; return get_language(t, dummy);
   }
 
-string alphashift(tile& t, int val) {
+string alphashift(const tile& t, int val) {
   auto lang = get_language(t);
   if(!lang) lang = current;
   auto& a = lang->alphabet;
