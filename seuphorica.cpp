@@ -1690,6 +1690,12 @@ void restart(const char *s, const char *poly, const char *_restricted) {
       for(int i: chosen) special_allowed[i] = true;
       }
     }
+  for(int i=0; i<(int) sp::first_artifact; i++) if(special_allowed[i]) {
+    auto lang = get_language(sp(i));
+    if(!lang) return;
+    polyglot_languages.insert(lang);
+    }
+
   current = next_language;
   new_game();
   }
