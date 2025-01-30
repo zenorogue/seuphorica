@@ -466,6 +466,10 @@ vector<special> specials = {
    "%+d multiplier when tiles on over 4 of 12 adjacent cells" + in_pl("mnożnik %+d jeśli są płytki na ponad 4 z 12 sąsiednich pól"),
     4, 0xFFFFFF80, 0xFF000000},
 
+  {"Symmetric" + in_pl("Symetryczne"),
+   "%+d multiplier when used as k-th letter and k-th last letter is also Symmetric" + in_pl("mnożnik %+d jeśli użyte jako k-ta litera i k-ta płytka od końca też jest symetryczna"),
+   2, 0xFFFFFFFF, 0xFF404040},
+
   /* controversial */
   {"Naughty" + in_pl("Niegrzeczne"),
    "%+d multiplier when used in a naughty word" + in_pl("mnożnik %+d gdy użyte w niegrzecznym słowie"),
@@ -488,7 +492,7 @@ enum class sp {
   teacher, trasher, multitrasher, duplicator, retain,
   drawing, rich,
   radiating, tricky, soothing, wild, portal,
-  wizard, redrawing, delayed, caesar, gigantic,
+  wizard, redrawing, delayed, caesar, gigantic, symmetric,
 
   naughty,
 
@@ -895,7 +899,7 @@ void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
     p += pa1;
     }
 
-  /* if(has_power(t, sp::symmetric)) {
+  if(has_power(t, sp::symmetric)) {
     style bhori(0xFFC0C0C0, 0, 3);
     for(int a: {l3, l7}) {
       path pa1(bhori);
@@ -909,7 +913,7 @@ void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
       pa1.add(vec(x+l9, y+a));
       p += pa1;
       }
-    } */
+    }
 
   language *lang = get_language(t);
   if(lang) {
@@ -1120,6 +1124,7 @@ void compute_score() {
       int word_length = 0;
       map<string, int> caesar_bonus;
       set<string> letters_in_word;
+      map<int, int> symmetric_at;
       } eds;
 
     /* data in given direction (direct/reverse) */
@@ -1139,6 +1144,9 @@ void compute_score() {
         mul1 -= word_use_count[word];
         for(auto& [what, val]: eds.caesar_bonus) {
           if(eds.letters_in_word.count(what)) mul1 += val;
+          }
+        for(auto& [pos, val]: eds.symmetric_at) {
+          if(eds.symmetric_at.count(eds.word_length-1-pos)) mul1 += val; else mul1 += eds.qsooth;
           }
         int score = eds.placed * eds.all * mul1;
 
@@ -1186,6 +1194,7 @@ void compute_score() {
         affect_mul(qty > 4);
         }
 
+      if(has_power(b, sp::symmetric, val)) eds.symmetric_at[eds.word_length] = val;
       if(has_power(b, sp::tricky, val)) has_tricky = true;
       if(has_power(b, sp::soothing, val)) eds.qsooth = max(eds.qsooth, val);
       if(has_power(b, sp::reversing, val)) directions = 2;
