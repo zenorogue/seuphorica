@@ -629,6 +629,10 @@ eBoardEffect get_color(coord c) {
   return res;
   }
 
+void empower(coord c, int val) {
+  if(get_color(c) == bePower) board.at(c).rarity += val;
+  }
+
 /* note: if spell[1].action_id is 2, then spell[1].inventory refers to the number of held spells which perform spell[2].action, similarly spell[1].identified */
 
 std::vector<std::string> greek_letters = {"α", "β", "γ", "δ", "ε", "ζ", "η", "θ", "ι", "κ", "λ", "μ", "ν", "ξ", "ο", "π", "ρ", "σ", "τ", "υ", "φ", "χ", "ψ", "ω"};
@@ -1090,32 +1094,30 @@ void compute_score() {
         if(!b) { if(ways & 1) edd.sooth++; if(ways & 2) edr.sooth++; }
         };
 
-      auto b1 = b; if(get_color(at) == bePower) b1.rarity++;
-
-      if(has_power(b1, sp::tricky, val)) has_tricky = true;
-      if(has_power(b1, sp::soothing, val)) eds.qsooth = max(eds.qsooth, val);
-      if(has_power(b1, sp::reversing, val)) directions = 2;
-      if(has_power(b1, sp::bending, val)) next = next.mirror();
-      if(has_power(b1, sp::portal, val)) { at = portals.at(at); ev.used_tiles.insert(at); needed.erase(at); }
-      if(has_power(b1, sp::premium, val)) affect_mul(true);
-      if(has_power(b1, sp::horizontal, val)) affect_mul(next.x);
-      if(has_power(b1, sp::vertical, val)) affect_mul(next.y);
-      if(has_power(b1, sp::naughty, val)) { eds.naughtymul += val; eds.naughtysooth++; }
-      if(has_power(b1, sp::red, val)) affect_mul(get_color(at) == beRed);
-      if(has_power(b1, sp::blue, val)) affect_mul(get_color(at) == beBlue);
-      if(has_power(b1, sp::initial, val)) { affect_mul(index == 0, 1); }
-      if(has_power(b1, sp::final, val)) { affect_mul(index == 0, 2); }
-      if(has_power(b1, sp::delayed, val)) { eds.start_delay += val; }
-      if(has_power(b1, sp::caesar, val)) { eds.caesar_bonus[alphashift(b1, 3)] += val; }
-      if(has_power(b1, sp::bending, val))
+      if(has_power(b, sp::tricky, val)) has_tricky = true;
+      if(has_power(b, sp::soothing, val)) eds.qsooth = max(eds.qsooth, val);
+      if(has_power(b, sp::reversing, val)) directions = 2;
+      if(has_power(b, sp::bending, val)) next = next.mirror();
+      if(has_power(b, sp::portal, val)) { at = portals.at(at); ev.used_tiles.insert(at); needed.erase(at); }
+      if(has_power(b, sp::premium, val)) affect_mul(true);
+      if(has_power(b, sp::horizontal, val)) affect_mul(next.x);
+      if(has_power(b, sp::vertical, val)) affect_mul(next.y);
+      if(has_power(b, sp::naughty, val)) { eds.naughtymul += val; eds.naughtysooth++; }
+      if(has_power(b, sp::red, val)) affect_mul(get_color(at) == beRed);
+      if(has_power(b, sp::blue, val)) affect_mul(get_color(at) == beBlue);
+      if(has_power(b, sp::initial, val)) { affect_mul(index == 0, 1); }
+      if(has_power(b, sp::final, val)) { affect_mul(index == 0, 2); }
+      if(has_power(b, sp::delayed, val)) { eds.start_delay += val; }
+      if(has_power(b, sp::caesar, val)) { eds.caesar_bonus[alphashift(b, 3)] += val; }
+      if(has_power(b, sp::bending, val))
         affect_mul(board.count(at-coord(1,0)) && board.count(at+coord(1,0)) && board.count(at-coord(0,1)) && board.count(at+coord(0,1)));
 
       auto lang = get_language(b, val);
       if(lang) { polyglot.insert(lang); affect_mul(not_in_base(b.letter)); }
 
       at = at + next;
-      if(has_power(b1, sp::final, val)) edd.mul += val;
-      if(has_power(b1, sp::initial, val)) edr.mul += val;
+      if(has_power(b, sp::final, val)) edd.mul += val;
+      if(has_power(b, sp::initial, val)) edr.mul += val;
       index++;
       if(has_tricky && board.count(at) && !old_tricks.count(allword)) {
         for(int rd=0; rd<directions; rd++) for(auto l: polyglot) {
@@ -1126,10 +1128,10 @@ void compute_score() {
             }
           }
         }
-      if(has_power(b1, sp::final, val)) edd.mul -= val;
-      if(has_power(b1, sp::initial, val)) edr.mul -= val;
-      if(has_power(b1, sp::final, val)) affect_mul(!board.count(at), 1);
-      if(has_power(b1, sp::initial, val)) affect_mul(!board.count(at), 2);
+      if(has_power(b, sp::final, val)) edd.mul -= val;
+      if(has_power(b, sp::initial, val)) edr.mul -= val;
+      if(has_power(b, sp::final, val)) affect_mul(!board.count(at), 1);
+      if(has_power(b, sp::initial, val)) affect_mul(!board.count(at), 2);
       }
     if(needed.empty()) ev.valid_move = true;
     bool is_legal = false;
@@ -1158,9 +1160,8 @@ void compute_score() {
 
   for(auto& p: ev.used_tiles) {
     auto& b = board.at(p);
-    auto b1 = b; if(get_color(p) == bePower) b1.rarity++;
     int val;
-    if(has_power(b1, sp::delayed, val)) ev.qdelay += val;
+    if(has_power(b, sp::delayed, val)) ev.qdelay += val;
     }
   ev.qdelay /= 2;
 
@@ -1187,9 +1188,10 @@ void compute_score() {
         scoring << "<br/>" << short_desc(board.at(ut)) << (" stays on the board (and is permanently removed from your deck)" + in_pl(" zostaje na planszy (i jest trwale usunięte z talii)"));
         break;
       case bePower: {
-        auto x = board.at(ut);
+        auto& x = board.at(ut);
+        empower(ut, -1);
         scoring << "<br/>" << short_desc(x);
-        x.rarity++;
+        empower(ut, +1);
         scoring << (" acts as " + in_pl(" działa jako ")) << tile_desc(x);
         break;
         }
@@ -1851,24 +1853,23 @@ void accept_move() {
 
   for(auto& p: ev.used_tiles) {
     auto& b = board.at(p);
-    auto b1 = b; if(get_color(p) == bePower) b1.rarity++;
     auto& sp = gsp(b);
     int val = sp.value * b.rarity;
-    if(has_power(b1, sp::rich, val)) qshop += val;
-    if(has_power(b1, sp::drawing, val)) qdraw += val;
-    if(has_power(b1, sp::teacher, val)) teach += val;
-    if(has_power(b1, sp::trasher, val)) copies_unused--;
-    if(has_power(b1, sp::multitrasher, val)) copies_unused--;
-    if(has_power(b1, sp::duplicator, val)) copies_used += val;
-    if(has_power(b1, sp::retain, val)) retain += val;
-    if(has_power(b1, sp::wizard, val)) while(val--) {
+    if(has_power(b, sp::rich, val)) qshop += val;
+    if(has_power(b, sp::drawing, val)) qdraw += val;
+    if(has_power(b, sp::teacher, val)) teach += val;
+    if(has_power(b, sp::trasher, val)) copies_unused--;
+    if(has_power(b, sp::multitrasher, val)) copies_unused--;
+    if(has_power(b, sp::duplicator, val)) copies_used += val;
+    if(has_power(b, sp::retain, val)) retain += val;
+    if(has_power(b, sp::wizard, val)) while(val--) {
       int spell_id = hrand_once(spells.size(), spells_rng);
       spells[spell_id].inventory++;
       string out = short_desc(b) + string(str_yields) + spell_desc(spell_id);
       last_spell_effect += out + "<br/>";
       add_to_log(out);
       }
-    if(has_power(b1, sp::redrawing, val)) {
+    if(has_power(b, sp::redrawing, val)) {
       auto& s = spells[spells[0].color_id];
       s.inventory += val; s.identified = true;
       }
@@ -1886,7 +1887,7 @@ void accept_move() {
     if(col == beStay) selftrash++;
     if(has_power(b, sp::portal) && get_color(portals.at(p))) selftrash++;
     if(has_power(b, sp::duplicator)) selftrash++;
-    if(!other_end) for(int i=selftrash; i<copies_used; i++) discard.push_back(b);
+    if(!other_end) for(int i=selftrash; i<copies_used; i++) { empower(p, -1); discard.push_back(b); empower(p, +1); }
     bool keep = false;
     for(sp x: {sp::bending, sp::portal, sp::reversing}) if(has_power(b, x)) keep = true;
     if(get_language(b)) keep = true;
@@ -2131,7 +2132,9 @@ extern "C" {
   void drop_hand_on(int x, int y) {
     coord c(x, y);
     if(placing_portal) {
+      empower(portal_from, -1);
       auto t = board.at(portal_from);
+      empower(portal_from, +1);
       int d = dist(portal_from, c);
       int val;
       bool powered = get_color(portal_from) == bePower && get_color(c) == bePower;
@@ -2140,6 +2143,7 @@ extern "C" {
       if(powered) t.rarity--;
       if(d > val) { placing_portal = false; back_from_board(portal_from.x, portal_from.y); return; }
       board.emplace(c, t);
+      empower(c, +1);
       portals.emplace(c, portal_from);
       portals.emplace(portal_from, c);
       just_placed.insert(c);
@@ -2149,6 +2153,7 @@ extern "C" {
       }
     if(drawn.size()) {
        board.emplace(c, std::move(drawn[0])); just_placed.insert(c); drawn.erase(drawn.begin());
+       empower(c, +1);
        if(has_power(board.at(c), sp::portal)) { placing_portal = true; portal_from = c; }
        draw_board();
        }
@@ -2169,6 +2174,7 @@ extern "C" {
     coord c(x, y);
     if(!just_placed.count(c)) return;
     if(!board.count(c)) return;
+    empower(c, -1);
     if(has_power(board.at(c), sp::portal) && !portals.count(c)) placing_portal = false;
     drawn.insert(drawn.begin(), board.at(c));
     board.erase(c); just_placed.erase(c);
