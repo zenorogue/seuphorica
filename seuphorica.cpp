@@ -61,7 +61,7 @@ language polski("polski", "SEUFORIKA", "slowa.txt", "AĄBCĆDEĘFGHIJKLŁMNŃOÓ
 language deutsch("deutsch", "SEUFORIKA", "german.txt", "ABCDEFGHIJKLMNOPQRSTUVWXYZÄÜÖ", "🇩🇪");
 language francais("français", "SEUFORICA", "french.txt", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "🇫🇷");
 language espanol("español", "SEUFORICA", "fise-2.txt", "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ", "🇪🇸");
-language portugues_br("português (br)", "SEUFORICA", "ptbr.txt", "ABCDEFGHIJLMNOPQRSTUVXZÇ", "🇧🇷");
+language portugues_br("português (br)", "SEUFORICA", "ptbr-v2.txt", "ABCDEFGHIJLMNOPQRSTUVXZÇ", "🇧🇷");
 
 language *current = &english;
 
