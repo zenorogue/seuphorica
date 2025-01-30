@@ -462,6 +462,10 @@ vector<special> specials = {
    + in_pl("mnożnik %+d jeśli słowo zawiera również C3"),
    2, 0xFFC0C0C0, 0xFF404040},
 
+  {"Gigantic" + in_pl("Gigantyczne"),
+   "%+d multiplier when tiles on over 4 of 12 adjacent cells" + in_pl("mnożnik %+d jeśli są płytki na ponad 4 z 12 sąsiednich pól"),
+    4, 0xFFFFFF80, 0xFF000000},
+
   /* controversial */
   {"Naughty" + in_pl("Niegrzeczne"),
    "%+d multiplier when used in a naughty word" + in_pl("mnożnik %+d gdy użyte w niegrzecznym słowie"),
@@ -484,7 +488,7 @@ enum class sp {
   teacher, trasher, multitrasher, duplicator, retain,
   drawing, rich,
   radiating, tricky, soothing, wild, portal,
-  wizard, redrawing, delayed, caesar,
+  wizard, redrawing, delayed, caesar, gigantic,
 
   naughty,
 
@@ -567,6 +571,7 @@ map<coord, eBoardEffect> colors;
 set<vector<coord>> old_tricks;
 
 map<coord, coord> portals;
+map<coord, coord> gigants;
 
 bool placing_portal;
 coord portal_from(0, 0);
@@ -639,8 +644,19 @@ eBoardEffect get_color(coord c) {
   return res;
   }
 
+bool has_power(const tile& t, sp which);
+string alphashift(const tile& t, int val);
+
 void empower(coord c, int val) {
-  if(get_color(c) == bePower) board.at(c).rarity += val;
+  auto& t = board.at(c);
+  int size = 1;
+  if(has_power(t, sp::gigantic)) size = 3;
+  for(int dx=0; dx<size; dx++) for(int dy=0; dy<size; dy++) {
+    if(get_color(c+coord(dx,dy)) == bePower) {
+      for(int ex=0; ex<size; ex++) for(int ey=0; ey<size; ey++)
+        board.at(c+coord(ex,ey)).rarity += val;
+      }
+    }
   }
 
 /* note: if spell[1].action_id is 2, then spell[1].inventory refers to the number of held spells which perform spell[2].action, similarly spell[1].identified */
@@ -678,9 +694,6 @@ string power_description(const special& s, int rarity) {
   sprintf(buf, s.desc->get().c_str(), s.value * rarity);
   return buf;
   }
-
-bool has_power(const tile& t, sp which);
-string alphashift(const tile& t, int val);
 
 string power_description(const tile &t) {
   string pow;
@@ -801,19 +814,24 @@ void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
   if(t.special >= sp::first_artifact) lines = 0xFFFFD500, wide = 2;
   style b(lines, s.background, 1.5 * wide);
   style bempty(0xFF808080, 0xFF101010, 0.5);
+  auto mysize = lsize;
+  if(has_power(t, sp::gigantic)) mysize *= 3;
 
   path pa(t.special != sp::notile ? b : bempty);
   pa.add(vec(x, y));
-  pa.add(vec(x+lsize, y));
-  pa.add(vec(x+lsize, y+lsize));
-  pa.add(vec(x, y+lsize));
+  pa.add(vec(x+mysize, y));
+  pa.add(vec(x+mysize, y+mysize));
+  pa.add(vec(x, y+mysize));
   pa.onclick = onc;
   pa.cycled = true;
   p += pa;
 
-  int l1 = lsize*1/10;
-  int l9 = lsize*9/10;
-  int l7 = lsize*7/10;
+  int l1 = mysize*1/10;
+  int l3 = mysize*3/10;
+  int l4 = mysize*4/10;
+  int l6 = mysize*6/10;
+  int l7 = mysize*7/10;
+  int l9 = mysize*9/10;
 
   if(has_power(t, sp::bending)) {
     style bmirror(0xFFC0C0FF, 0, 5);
@@ -877,11 +895,27 @@ void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
     p += pa1;
     }
 
+  /* if(has_power(t, sp::symmetric)) {
+    style bhori(0xFFC0C0C0, 0, 3);
+    for(int a: {l3, l7}) {
+      path pa1(bhori);
+      pa1.add(vec(x+a, y+l1));
+      pa1.add(vec(x+a, y+l9));
+      p += pa1;
+      }
+    for(int a: {l3, l7}) {
+      path pa1(bhori);
+      pa1.add(vec(x+l1, y+a));
+      pa1.add(vec(x+l9, y+a));
+      p += pa1;
+      }
+    } */
+
   language *lang = get_language(t);
   if(lang) {
     font ff = makefont("DejaVuSans-Bold.ttf", ";font-family:'DejaVu Sans';font-weight:bold");
     style bblack(0, s.text_color, 0);
-    text t1(bblack, ff, vec(x+lsize*.5, y+lsize*.35), center, lsize * .9, lang->flag);
+    text t1(bblack, ff, vec(x+mysize*.5, y+mysize*.35), center, mysize * .9, lang->flag);
     t1.onclick = onc;
     p += t1;
     }
@@ -889,11 +923,11 @@ void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
   if(t.special != sp::notile) {
     font ff = makefont("DejaVuSans-Bold.ttf", ";font-family:'DejaVu Sans';font-weight:bold");
     style bblack(0, s.text_color, 0);
-    text t1(bblack, ff, vec(x+lsize*.45, y+lsize*.35), center, lsize*.9, t.letter);
+    text t1(bblack, ff, vec(x+mysize*.45, y+mysize*.35), center, mysize*.9, t.letter);
     t1.onclick = onc;
     p += t1;
     string s = to_string(t.value);
-    text t2(bblack, ff, vec(x+lsize*.95, y+lsize*.95), botright, lsize*.3, s);
+    text t2(bblack, ff, vec(x+mysize*.95, y+mysize*.95), botright, mysize*.3, s);
     t2.onclick = onc;
     p += t2;
     }
@@ -951,6 +985,27 @@ struct eval {
 
 eval ev;
 
+coord get_gigantic(coord x) {
+  if(gigants.count(x)) return gigants.at(x);
+  return x;
+  }
+
+coord get_portal(coord x) {
+  if(get_gigantic(x) != x) {
+    coord rel = x - get_gigantic(x);
+    return get_portal(x - rel) + rel;
+    }
+  return portals.at(x);
+  }
+
+void mirror(coord& at, coord& prev) {
+  if(get_gigantic(at) != at) {
+    auto rel = at - get_gigantic(at);
+    at = at - rel + rel.mirror();
+    }
+  prev = prev.mirror();
+  }
+
 vector<coord> windrose = {coord(1,0), coord(-1,0), coord(0,1), coord(0,-1)};
 
 void compute_score() {
@@ -994,15 +1049,20 @@ void compute_score() {
 
   set<pair<coord, coord>> starts;
 
-  for(auto p: just_placed) {
+  for(auto p1: just_placed) {
     for(coord dir: { coord(1,0), coord(0,1) }) {
       coord prev = -dir;
-      auto &t = board.at(p);
-      if(has_power(t, sp::bending)) prev = prev.mirror();
-      auto p1 = p;
-      if(has_power(t, sp::portal)) p = portals.at(p);
+      auto &t = board.at(p1);
+      auto p = p1;
+      if(has_power(t, sp::bending)) mirror(p, prev);
+      if(has_power(t, sp::portal)) p = get_portal(p1);
+
+      if(gigants.count(p) && gigants.count(p+prev) && gigants.at(p+prev) == gigants.at(p)) continue;
+
       bool seen_tricky = false;
-      if(board.count(p1+dir) || board.count(p+prev)) {
+      auto nxt = p1+dir; if(gigants.count(p1)) nxt = nxt + dir + dir;
+
+      if(board.count(nxt) || board.count(p+prev)) {
         int steps = 0;
         auto at = p;
         while(board.count(at + prev)) {
@@ -1012,10 +1072,11 @@ void compute_score() {
           if(seen_tricky) starts.emplace(at, -prev);
           at = at + prev;
           auto &ta1 = board.at(at);
-          if(has_power(ta1, sp::bending)) prev = prev.mirror();
-          if(has_power(ta1, sp::portal)) at = portals.at(at);
+          if(has_power(ta1, sp::gigantic)) at = at + prev + prev;
+          if(has_power(ta1, sp::portal)) at = get_portal(at);
+          if(has_power(ta1, sp::bending)) mirror(at, prev);
           }
-        starts.emplace(at, -prev);
+        if(steps || board.count(nxt)) starts.emplace(at, -prev);
         }
       }
     }
@@ -1043,7 +1104,7 @@ void compute_score() {
     auto at = ss.first, next = ss.second;
     string word;
     set<coord> needed;
-    for(auto p: just_placed) if(!has_power(board.at(p), sp::flying)) needed.insert(p);
+    for(auto p: just_placed) if(!has_power(board.at(p), sp::flying) && get_gigantic(p) == p) needed.insert(p);
     bool has_tricky = false;
     int directions = 1;
     bool optional = board.count(at-next);
@@ -1092,7 +1153,7 @@ void compute_score() {
       } edd, edr;
 
     while(board.count(at)) {
-      needed.erase(at);
+      needed.erase(get_gigantic(at));
       ev.used_tiles.insert(at);
       auto& b = board.at(at);
       edd.word += b.letter;
@@ -1111,17 +1172,31 @@ void compute_score() {
         if(!b) { if(ways & 1) edd.sooth++; if(ways & 2) edr.sooth++; }
         };
 
+      int size = 1;
+      auto at_orig = at;
+      if(has_power(b, sp::gigantic, val)) {
+        at_orig = get_gigantic(at);
+        at = at + next + next;
+        size = 3;
+        int qty = 0;
+        for(int dx=0; dx<size; dx++) for(int dy=0; dy<size; dy++) for(auto w: windrose) {
+          auto at1 = at_orig + coord(dx, dy) + w;
+          if(board.count(at1) && get_gigantic(at1) != at_orig) qty++;
+          }
+        affect_mul(qty > 4);
+        }
+
       if(has_power(b, sp::tricky, val)) has_tricky = true;
       if(has_power(b, sp::soothing, val)) eds.qsooth = max(eds.qsooth, val);
       if(has_power(b, sp::reversing, val)) directions = 2;
-      if(has_power(b, sp::bending, val)) next = next.mirror();
-      if(has_power(b, sp::portal, val)) { at = portals.at(at); ev.used_tiles.insert(at); needed.erase(at); }
+      if(has_power(b, sp::red, val)) for(int dx=0; dx<size; dx++) for(int dy=0; dy<size; dy++) affect_mul(get_color(at_orig+coord(dx,dy)) == beRed);
+      if(has_power(b, sp::blue, val)) for(int dx=0; dx<size; dx++) for(int dy=0; dy<size; dy++) affect_mul(get_color(at_orig+coord(dx,dy)) == beBlue);
+      if(has_power(b, sp::portal, val)) { at = get_portal(at); ev.used_tiles.insert(at); needed.erase(at); }
+      if(has_power(b, sp::bending, val)) mirror(at, next);
       if(has_power(b, sp::premium, val)) affect_mul(true);
       if(has_power(b, sp::horizontal, val)) affect_mul(next.x);
       if(has_power(b, sp::vertical, val)) affect_mul(next.y);
       if(has_power(b, sp::naughty, val)) { eds.naughtymul += val; eds.naughtysooth++; }
-      if(has_power(b, sp::red, val)) affect_mul(get_color(at) == beRed);
-      if(has_power(b, sp::blue, val)) affect_mul(get_color(at) == beBlue);
       if(has_power(b, sp::initial, val)) { affect_mul(eds.word_length == 0, 1); }
       if(has_power(b, sp::final, val)) { affect_mul(eds.word_length == 0, 2); }
       if(has_power(b, sp::delayed, val)) { eds.start_delay += val; }
@@ -1205,10 +1280,12 @@ void compute_score() {
         scoring << "<br/>" << short_desc(board.at(ut)) << str_stayson;
         break;
       case bePower: {
+        auto ut1 = ut;
+        if(gigants.count(ut)) ut1 = gigants.at(ut);
         auto& x = board.at(ut);
-        empower(ut, -1);
+        empower(ut1, -1);
         scoring << "<br/>" << short_desc(x);
-        empower(ut, +1);
+        empower(ut1, +1);
         scoring << str_acts_as << tile_desc(x);
         break;
         }
@@ -1289,15 +1366,18 @@ void draw_board() {
 
   for(int y=miny; y<maxy; y++)
   for(int x=minx; x<maxx; x++) if(board.count({x, y})) {
-    string s = " onclick = 'back_from_board(" + to_string(x) + "," + to_string(y) + ")'";
+    string s = " onclick = 'back_from_board(" + to_string(x) + "," + to_string(y) + ")' title = 'placed tile'";
+    if(gigants.count({x,y}) && gigants.at({x,y}) != coord{x,y})
+      continue;
     render_tile(p, x*lsize, y*lsize, board.at({x,y}), s);
     }
 
   for(int y=miny; y<maxy; y++)
   for(int x=minx; x<maxx; x++) if(portals.count({x, y})) {
     auto c1 = portals.at({x, y});
-    int l1 = lsize*1/10;
-    int l9 = lsize*9/10;
+    int mysize = lsize * (has_power(board.at(c1), sp::gigantic) ? 3 : 1);
+    int l1 = mysize*1/10;
+    int l9 = mysize*9/10;
     style borange(0x80FF8000, 0, 3);
     style bblue(0x800000FF, 0, 3);
     path pa1(borange);
@@ -1856,6 +1936,19 @@ bool under_radiation(coord c) {
   return false;
   }
 
+bool on_stay(coord c) {
+  int size = 1;
+  auto& t = board.at(c);
+  if(has_power(t, sp::gigantic)) size = 3;
+
+  for(int dx=0; dx<size; dx++)
+    for(int dy=0; dy<size; dy++)
+      if(get_color(c+coord{dx,dy}) == beStay)
+        return true;
+
+  return false;
+  }
+
 void accept_move() {
   int tax_paid = tax();
   cash += ev.total_score - tax();
@@ -1899,18 +1992,18 @@ void accept_move() {
   for(auto& p: just_placed) {
     auto& b = board.at(p);
     auto col = get_color(p);
-    bool other_end = has_power(b, sp::portal) && p < portals.at(p);
+    bool other_end = (get_gigantic(p) != p) || (has_power(b, sp::portal) && p < portals.at(p));
     if(b.price && !other_end) add_to_log("bought: "+short_desc(b)+ " for " + to_string(b.price) + ": " + power_description(b));
     add_to_log("on (" + to_string(p.x) + "," + to_string(p.y) + "): " + short_desc(board.at(p)));
     b.price = 0;
     int selftrash = 0;
     if(has_power(b, sp::trasher)) selftrash = 1;
-    if(col == beStay) selftrash++;
-    if(has_power(b, sp::portal) && get_color(portals.at(p))) selftrash++;
+    if(on_stay(p)) selftrash++;
+    if(has_power(b, sp::portal) && on_stay(portals.at(p))) selftrash++;
     if(has_power(b, sp::duplicator)) selftrash++;
     if(!other_end) for(int i=selftrash; i<copies_used; i++) { empower(p, -1); discard.push_back(b); empower(p, +1); }
     bool keep = false;
-    for(sp x: {sp::bending, sp::portal, sp::reversing}) if(has_power(b, x)) keep = true;
+    for(sp x: {sp::bending, sp::portal, sp::reversing, sp::gigantic}) if(has_power(b, x)) keep = true;
     if(get_language(b)) keep = true;
     if(col == beStay) keep = true;
     if(col >= beSpell) spells[col - beSpell].inventory++;
@@ -1952,6 +2045,7 @@ void new_game() {
   drawn = {};
   shop = {};
   portals = {};
+  gigants = {};
   just_placed = {};
   cash = 80;
   roundindex = 1;
@@ -2164,6 +2258,35 @@ string powerup_help(coord at) {
     }
   }
 
+void giant_growth(coord c) {
+  auto &t = board.at(c);
+  if(has_power(t, sp::gigantic)) {
+    for(int dx=0; dx<3; dx++) for(int dy=0; dy<3; dy++) {
+      coord c1(c.x+dx, c.y+dy);
+      if(dx||dy) {
+        board.emplace(c1, t);
+        just_placed.insert(c1);
+        }
+      gigants.emplace(c1, c);
+      }
+    }
+  }
+
+void take_from(coord c) {
+  int size = has_power(board.at(c), sp::gigantic) ? 3 : 1;
+  for(int dx=0; dx<size; dx++) for(int dy=0; dy<size; dy++) {
+    auto c1 = c + coord(dx, dy);
+    board.erase(c1); just_placed.erase(c1); gigants.erase(c1);
+    }
+  }
+
+bool fail_gigantic(tile &t, coord c) {
+  if(!has_power(t, sp::gigantic)) return false;
+  if(c.x + 2 >= maxx || c.y + 2 >= maxy) return true;
+  for(int dx=0; dx<3; dx++) for(int dy=0; dy<3; dy++) if(board.count(c+coord{dx,dy})) return true;
+  return false;
+  }
+
 extern "C" {
   void start(bool mobile) { gameseed = time(NULL); init(mobile); }
   
@@ -2175,15 +2298,20 @@ extern "C" {
       empower(portal_from, -1);
       auto t = board.at(portal_from);
       empower(portal_from, +1);
+      if(fail_gigantic(t, c)) return;
       int d = dist(portal_from, c);
-      int val;
-      bool powered = get_color(portal_from) == bePower && get_color(c) == bePower;
-      if(powered) t.rarity++;
-      has_power(t, sp::portal, val);
-      if(powered) t.rarity--;
-      if(d > val) { placing_portal = false; back_from_board(portal_from.x, portal_from.y); return; }
+      int val1 = 0, val2 = 0;
+      has_power(t, sp::portal, val1);
       board.emplace(c, t);
+      giant_growth(c);
       empower(c, +1);
+      has_power(board.at(c), sp::portal, val2);
+      if(d > min(val1, val2)) {
+        placing_portal = false;
+        take_from(c);
+        back_from_board(portal_from.x, portal_from.y);
+        return;
+        }
       portals.emplace(c, portal_from);
       portals.emplace(portal_from, c);
       just_placed.insert(c);
@@ -2192,7 +2320,9 @@ extern "C" {
       return;
       }
     if(drawn.size()) {
+       if(fail_gigantic(drawn[0], c)) return;
        board.emplace(c, std::move(drawn[0])); just_placed.insert(c); drawn.erase(drawn.begin());
+       giant_growth(c);
        empower(c, +1);
        if(has_power(board.at(c), sp::portal)) { placing_portal = true; portal_from = c; }
        draw_board();
@@ -2228,11 +2358,12 @@ extern "C" {
       draw_board();
       return;
       }
+    c = get_gigantic(c);
     empower(c, -1);
     if(has_power(board.at(c), sp::portal) && !portals.count(c)) placing_portal = false;
     drawn.insert(drawn.begin(), board.at(c));
-    board.erase(c); just_placed.erase(c);
-    if(portals.count(c)) { auto c1 = portals.at(c); portals.erase(c); portals.erase(c1); board.erase(c1); just_placed.erase(c1); }
+    take_from(c);
+    if(portals.count(c)) { auto c1 = portals.at(c); portals.erase(c); portals.erase(c1); take_from(c1); }
     draw_board();
     }
 
