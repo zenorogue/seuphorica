@@ -548,6 +548,7 @@ struct coord {
   coord operator - () const { return coord(-x, -y); }
   bool operator < (const coord& b) const { return tie(x,y) < tie(b.x, b.y); }
   bool operator == (const coord& b) const { return tie(x,y) == tie(b.x, b.y); }
+  bool operator != (const coord& b) const { return tie(x,y) != tie(b.x, b.y); }
   coord mirror() { return coord(y, x); }
   };
 
