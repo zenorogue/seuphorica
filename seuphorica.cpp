@@ -690,7 +690,7 @@ array<int, 3> stacked_mults;
 void spell_message(const string&);
 string last_spell_effect;
 
-tile empty_tile(0, sp::notile);
+tile empty_tile("", sp::notile);
 
 special &gsp(sp x) {
   return specials[int(x)];
