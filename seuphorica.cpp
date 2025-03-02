@@ -10,6 +10,8 @@
 #include <emscripten/fetch.h>
 #include <random>
 
+namespace seuphorica {
+
 const int lsize = 40;
 
 template<class T> int isize(const T& x) { return x.size(); }
@@ -180,7 +182,7 @@ struct polyleaf : public polystring_base {
   string b;
   string get() { return b; }
   polyleaf(const string& s) : b(s) {}
-  virtual bool eqcap(const string& s) { return ::eqcap(b, s); }
+  virtual bool eqcap(const string& s) { return seuphorica::eqcap(b, s); }
   };
 
 struct polystring : shared_ptr<polystring_base> {
@@ -1136,7 +1138,7 @@ void compute_score() {
       eval_data_directed() { mul = 1 + stacked_mults[roundindex % 3]; sooth = 0; }
 
       bool ok(eval_data_shared& eds, language *l) {
-        return ::ok(word, eds.word_length, l);
+        return seuphorica::ok(word, eds.word_length, l);
         }
 
       void evaluate(eval_data_shared& eds, language *l, stringstream& scoring, bool illegal) {
@@ -2438,4 +2440,5 @@ extern "C" {
 
   void update_dict(const char* s) { update_dictionary(s); }
   }
-                                  
+
+}
