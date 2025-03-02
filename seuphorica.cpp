@@ -1,3 +1,4 @@
+#ifndef NONJS
 #include <iostream>
 #include <string>
 #include <vector>
@@ -9,6 +10,7 @@
 #include "visutils.h"
 #include <emscripten/fetch.h>
 #include <random>
+#endif
 
 namespace seuphorica {
 
@@ -85,6 +87,7 @@ language::language(const string& name, const string& gamename, const string& fna
 
 void draw_board();
 
+#ifndef NONJS
 void downloadSucceeded(emscripten_fetch_t *fetch) {
   language& l = *((language*) fetch->userData);
   string s;
@@ -152,6 +155,7 @@ void read_naughty_dictionary(language& l) {
   l.state = language_state::fetch_started;
   emscripten_fetch(&attr, ("naughty-" + l.fname).c_str());
   }
+#endif
 
 bool ok(const string& word, int len, language* cur) {
   return cur->dictionary[len].count(word);
@@ -815,6 +819,7 @@ string alphashift(const tile& t, int val) {
   return t.letter;
   }
 
+#ifndef NONJS
 void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
   auto& s = gsp(t);
   unsigned lines = 0xFF000000;
@@ -943,6 +948,7 @@ void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
     p += t2;
     }
   }
+#endif
 
 string spell_desc(int id, int qty = -1) {
   auto& sp = spells[id];
@@ -1326,6 +1332,7 @@ string power_list() {
 
 int minx, miny, maxx, maxy;
 
+#ifndef NONJS
 void draw_board() {
   pic p;
 
@@ -1504,9 +1511,11 @@ void draw_board() {
 
   set_value("output", ss.str());
   }
+#endif
 
 extern "C" {
 
+#ifndef NONJS
 void check_discard() {
   stringstream ss;
 
@@ -1538,6 +1547,7 @@ void check_discard() {
 
   set_value("output", ss.str());
   }
+#endif
 
 void sort_by(int i) {
   auto f = [i] (const tile &t1, const tile& t2) {
@@ -1559,9 +1569,12 @@ void sort_by(int i) {
     stable_sort(shop.begin(), shop.end(), f);
     stable_sort(drawn.begin(), drawn.end(), f);
     }
+  #ifndef NONJS
   check_discard();
+  #endif
   }
 
+#ifndef NONJS
 void view_game_log() {
   stringstream ss;
   ss << "<div style=\"float:left;width:30%\">&nbsp;</div>";
@@ -1620,6 +1633,7 @@ void view_help() {
 
   set_value("output", ss.str());
   }
+#endif
 
 language *next_language = current;
 
@@ -1659,9 +1673,12 @@ void update_dictionary(string s) {
     if(qty == 0) ss << str_no_matching << " " << s << ".";
     else ss << " (" << qty << " " << str_matching << ")";
     }
+  #ifndef NONJS
   set_value("answer", ss.str());
+  #endif
   }
 
+#ifndef NONJS
 void view_dictionary() {
   next_language = current;
   stringstream ss;
@@ -1753,9 +1770,11 @@ void view_new_game() {
   next_language = current;
   review_new_game();
   }
+#endif
 
 void new_game();
 
+#ifndef NONJS
 void set_language(const char *s) {
   for(auto l: languages) if(l->name == s) next_language = l;
   review_new_game();
@@ -1765,6 +1784,7 @@ void set_language_dic(const char *s) {
   for(auto l: languages) if(l->name == s) next_language = l;
   update_dictionary(dictionary_checked);
   }
+#endif
 
 bool bad_language(sp s) {
   auto lang = get_language(s);
@@ -2139,6 +2159,7 @@ void check_daily_time() {
   sprintf(secleft, "%02d:%02d:%02d", seconds_left / 3600, (seconds_left / 60) % 60, seconds_left % 60);
   }
 
+#ifndef NONJS
 void view_intro() {
   stringstream ss;
 
@@ -2313,7 +2334,9 @@ bool fail_gigantic(tile &t, coord c) {
   }
 
 extern "C" {
+  #ifndef NONJS
   void start(bool mobile) { gameseed = time(NULL); init(mobile); }
+  #endif
   
   void back_from_board(int x, int y);
 
@@ -2373,6 +2396,7 @@ extern "C" {
       return;
       }
     if(!just_placed.count(c)) {
+      #ifndef NONJS
       stringstream ss;
       pic p;
       auto& t = board.at(c);
@@ -2381,6 +2405,7 @@ extern "C" {
       last_spell_effect = "<br/><b>" + str_tile_on_board->get() + "</b><br/>" + sts + " " + tile_desc(t) + " <br/>";
       if(get_color(c)) last_spell_effect += powerup_help(c) + "<br/>";
       draw_board();
+      #endif
       return;
       }
     c = get_gigantic(c);
