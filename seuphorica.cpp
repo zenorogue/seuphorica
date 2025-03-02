@@ -1120,8 +1120,6 @@ void compute_score() {
     int directions = 1;
     bool optional = board.count(at-next);
     vector<coord> allword;
-    int rmul = 1 + stacked_mults[roundindex % 3];
-    int sooth = 0, rsooth = 0;
     set<language*> polyglot = { current };
 
     /* data shared between both directions */
