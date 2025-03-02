@@ -12,6 +12,8 @@
 
 const int lsize = 40;
 
+template<class T> int isize(const T& x) { return x.size(); }
+
 bool game_running;
 bool game_restricted;
 bool is_daily;
@@ -52,7 +54,7 @@ int utf8_len(char ch) {
 int utf8_length(const string& s) {
   int i = 0;
   int len = 0;
-  while(i < s.size()) i += utf8_len(s[i]), len++;
+  while(i < isize(s)) i += utf8_len(s[i]), len++;
   return len;
   }
 
@@ -71,7 +73,7 @@ vector<language*> languages = {&english, &francais, &deutsch, &espanol, &polski,
 
 language::language(const string& name, const string& gamename, const string& fname, const string& alph, const string& flag) : name(name), gamename(gamename), fname(fname), flag(flag) {
   int i = 0;
-  while(i < alph.size()) {
+  while(i < isize(alph)) {
     int len = utf8_len(alph[i]);
     string letter = alph.substr(i, len);
     i += len;
@@ -601,7 +603,7 @@ int hrand_once(int i, std::mt19937& which = shop_rng) {
   long long m = (long long) (which.max() - which.min()) + 1;
   m /= i;
   d /= m;
-  if(d == i) return i-1;
+  if(int(d) == i) return i-1;
   return d;
   }
 
@@ -622,9 +624,9 @@ eBoardEffect get_color(coord c) {
     int index = (ax+ay) * (ax+ay) + ax;
     index *= 4;
     if(c.x > 0) index++; if(c.y > 0) index+=2;
-    while(board_cache.size() <= index) {
+    while(isize(board_cache) <= index) {
       board_cache.push_back(hrand(25, board_rng));
-      if(board_cache.back() == 18 || board_cache.back() == 17) if(enabled_spells) board_cache.back() = 64 + hrand(spells.size(), board_rng);
+      if(board_cache.back() == 18 || board_cache.back() == 17) if(enabled_spells) board_cache.back() = 64 + hrand(isize(spells), board_rng);
       }
     int r = board_cache[index];
     if(r == 24) colors[c] = beRed;
@@ -799,7 +801,7 @@ string alphashift(const tile& t, int val) {
   auto lang = get_language(t);
   if(!lang) lang = current;
   auto& a = lang->alphabet;
-  int size = a.size();
+  int size = isize(a);
 
   for(int i=0; i<size; i++)
     if(a[i] == t.letter)
@@ -1410,7 +1412,7 @@ void draw_board() {
   ss << "<div style=\"float:left;width:20%\">&nbsp;</div>";
   ss << "<div style=\"float:left;width:20%\">";
 
-  ss << "<b>" << str_tiles_in_hand << " </b>(<a onclick='check_discard()'>" << str_discard << " " << discard.size() << " " << str_bag << " " << deck.size() << "</a>)<br/>";
+  ss << "<b>" << str_tiles_in_hand << " </b>(<a onclick='check_discard()'>" << str_discard << " " << isize(discard) << " " << str_bag << " " << isize(deck) << "</a>)<br/>";
 
   int id = 0;
   for(auto& t: drawn) {
@@ -1432,7 +1434,7 @@ void draw_board() {
   for(auto& sp: spells) if((sp.identified && enabled_id) || sp.inventory) have_spells = true;
   if(have_spells) {
     ss << "<b>" << str_spells << "</b><br/>";
-    for(int id=0; id<int(spells.size()); id++) {
+    for(int id=0; id<isize(spells); id++) {
       auto& sp = spells[id];
       if((sp.identified && enabled_id) || sp.inventory) {
         ss << spell_desc(id, sp.inventory) << "<br/>";
@@ -1774,7 +1776,7 @@ void restart(const char *s, const char *poly, const char *_restricted) {
   polyglot_languages = {};
   bool do_naughty = false;
   for(char ch: spoly) {
-    if(ch >= 'a' && ch < 'a' + int(languages.size()))
+    if(ch >= 'a' && ch < 'a' + isize(languages))
       polyglot_languages.insert(languages[ch - 'a']);
     if(ch == 'D') is_daily = true;
     if(ch == 'N') do_naughty = true;
@@ -1854,7 +1856,7 @@ void draw_tiles(int qty = 8) {
       deck.erase(deck.begin());
       }
     else {
-      int which = hrand(deck.size(), draw_rng);
+      int which = hrand(isize(deck), draw_rng);
       drawn.emplace_back(std::move(deck[which]));
       deck[which] = std::move(deck.back());
       deck.pop_back();
@@ -1881,7 +1883,7 @@ sp actual_basic_special() {
   }
 
 sp generate_artifact() {
-  int next = int(specials.size());
+  int next = isize(specials);
   specials.emplace_back();
   auto& gs = specials.back();
   string artadj[10] = {"Ancient ", "Embroidered ", "Glowing ", "Shiny ", "Powerful ", "Forgotten ", "Demonic ", "Angelic ", "Great ", "Magical "};
@@ -1915,7 +1917,7 @@ void build_shop(int qty = 6) {
   for(auto& t: shop) add_to_log("ignored: "+short_desc(t)+ " for " + to_string(t.price));
   shop.clear();
   for(int i=0; i < qty; i++) {
-    string l = current->alphabet[hrand(current->alphabet.size())];
+    string l = current->alphabet[hrand(isize(current->alphabet))];
     if(shop_id % 6 == 0) l = "AEIOU" [hrand(5)];
     int val = 1;
     int max_price = get_max_price(roundindex);
@@ -1934,7 +1936,7 @@ void build_shop(int qty = 6) {
       }
     t.price = price;
     auto lang = get_language(t);
-    if(lang && i) t.letter = lang->alphabet[hrand(lang->alphabet.size())];
+    if(lang && i) t.letter = lang->alphabet[hrand(isize(lang->alphabet))];
     shop.push_back(t);
     shop_id++;
     }
@@ -1990,7 +1992,7 @@ void accept_move() {
     if(has_power(b, sp::duplicator, val)) copies_used += val;
     if(has_power(b, sp::retain, val)) retain += val;
     if(has_power(b, sp::wizard, val)) while(val--) {
-      int spell_id = hrand_once(spells.size(), spells_rng);
+      int spell_id = hrand_once(isize(spells), spells_rng);
       spells[spell_id].inventory++;
       string out = short_desc(b) + string(str_yields) + spell_desc(spell_id);
       last_spell_effect += out + "<br/>";
@@ -2089,7 +2091,7 @@ void new_game() {
   word_use_count.clear();
 
   auto g = greek_letters;
-  for(int i=0; i<int(spells.size()); i++) {
+  for(int i=0; i<isize(spells); i++) {
     auto& s = spells[i];
     s.inventory = 0; s.identified = !enabled_id;
     if(enabled_id) {
@@ -2099,10 +2101,10 @@ void new_game() {
     else {
       s.action_id = i;
       }
-    int id = hrand_once(g.size(), spells_rng);
+    int id = hrand_once(isize(g), spells_rng);
     s.greek = g[id]; swap(g[id], g.back()); g.pop_back();
     }
-  for(int i=0; i<int(spells.size()); i++) spells[spells[i].action_id].color_id = i;
+  for(int i=0; i<isize(spells); i++) spells[spells[i].action_id].color_id = i;
   last_spell_effect = "";
 
   if(is_daily) {
@@ -2419,7 +2421,7 @@ extern "C" {
   void back_to_game() { draw_board(); }
 
   void wild_become(int id, const char *s) {
-    if(drawn.size() > id && has_power(drawn[id], sp::wild)) { drawn[id].letter = s; drawn[id].value = 0; } draw_board();
+    if(isize(drawn) > id && has_power(drawn[id], sp::wild)) { drawn[id].letter = s; drawn[id].value = 0; } draw_board();
     }
 
   void play() {
