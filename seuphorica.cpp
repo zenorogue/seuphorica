@@ -744,6 +744,8 @@ string short_desc(const tile& t) {
   return out;
   }
 
+bool color_descs = true;
+
 string tile_desc(const tile& t) {
   auto& s = gsp(t);
   string out;
@@ -751,7 +753,14 @@ string tile_desc(const tile& t) {
   cap += " ";
   cap += t.letter;
   cap += to_string(t.value);
-  if(t.special >= sp::first_artifact && t.rarity == 2)
+  if(!color_descs) {
+    out = cap + ": ";
+    if(t.special >= sp::first_artifact && t.rarity >= 2) out = string(str_legendary) + " " + out;
+    else if(t.rarity == 2) out = string(str_rare) + " " + out;
+    else if(t.rarity == 3) out = string(str_epic) + " " + out;
+    else if(t.rarity >= 4) out = string(str_legendary) + " " + out;
+    }
+  else if(t.special >= sp::first_artifact && t.rarity >= 2)
     out = "<b><font color='#FFA500'>" + string(str_legendary) + " " + cap + ": </font></b>";
   else if(t.special >= sp::first_artifact)
     out = "<b><font color='#FFD500'>" + cap + ": </font></b>";
