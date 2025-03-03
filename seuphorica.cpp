@@ -1470,7 +1470,9 @@ void draw_board() {
     ss << sts + " " + tile_desc(t);
     if(id <= ev.retain_count) ss << " [retained]";
     if(has_power(t, sp::wild)) {
-      for(char ch='A'; ch <= 'Z'; ch++)
+      auto lang = get_language(t);
+      if(!lang) lang = current;
+      for(auto ch: lang->alphabet)
         ss << " <a onclick='wild_become(" << id-1 << ", \"" << ch << "\")'>" << ch << "</a>";
       }
     ss << "<br/>";
