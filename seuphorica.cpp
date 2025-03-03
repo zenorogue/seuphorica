@@ -1332,6 +1332,21 @@ string power_list() {
 
 int minx, miny, maxx, maxy;
 
+void gamestats(stringstream& ss) {
+  if(is_daily) ss << str_daily << " #" << daily << "<br>";
+  if(game_restricted) {
+    ss << power_list() << "<br/>";
+    }
+  int sm0 = stacked_mults[roundindex%3];
+  int sm1 = stacked_mults[(roundindex+1)%3];
+  int sm2 = stacked_mults[(roundindex+2)%3];
+  if(sm0) { ss << str_extra_this << sm0 << "<br/>"; }
+  if(sm1) { ss << str_extra_next << sm1 << "<br/>"; }
+  if(sm2) { ss << str_extra_debug << sm2 << "<br/>"; }
+  ss << str_turn << ": " << roundindex << " " << str_total_winnings << ": " << total_gain << " 🪙<br/>";
+  if(roundindex > 20) ss << str_total_winnings_20 << ": " << total_gain_20 << " 🪙<br/>";
+  }
+
 #ifndef NONJS
 void draw_board() {
   pic p;
@@ -1480,18 +1495,8 @@ void draw_board() {
   ss << "</div>";
   ss << "<div style=\"float:left;width:20%\">";
 
-  if(is_daily) ss << str_daily << " #" << daily << "<br>";
-  if(game_restricted) {
-    ss << power_list() << "<br/>";
-    }
-  int sm0 = stacked_mults[roundindex%3];
-  int sm1 = stacked_mults[(roundindex+1)%3];
-  int sm2 = stacked_mults[(roundindex+2)%3];
-  if(sm0) { ss << str_extra_this << sm0 << "<br/>"; }
-  if(sm1) { ss << str_extra_next << sm1 << "<br/>"; }
-  if(sm2) { ss << str_extra_debug << sm2 << "<br/>"; }
-  ss << str_turn << ": " << roundindex << " " << str_total_winnings << ": " << total_gain << " 🪙<br/>";
-  if(roundindex > 20) ss << str_total_winnings_20 << ": " << total_gain_20 << " 🪙<br/>";
+  gamestats(ss);
+
   ss << ev.current_scoring << "<br/><br/>";
   if(ev.valid_move && just_placed.empty()) {
     add_button(ss, "play()", str_skip_turn);
@@ -1512,6 +1517,31 @@ void draw_board() {
   set_value("output", ss.str());
   }
 #endif
+
+string rules =
+  "The rules:<br/>"
+  "<ul>"
+  "<li>Place tiles on the board<ul>"
+  "<li> Any word (a complete line of at least two adjacent letters) must be valid</li>"
+  "<li> placed tiles must be in a single word (it can include old tiles too)</li>"
+  "<li> You score for all the new words you have created</li>"
+  "<li> one of the words created must contain an old letter</li></ul></li>"
+  "<li> The score for a word is the product of:<ul>"
+  "<li> sum of the values of new tiles in the word</li>"
+  "<li> sum of the values of all tiles in the word</li>"
+  "<li> the multiplier (1 by default)</li></ul></li>"
+  "<li>after each move: <ul>"
+  "<li> standard copies of the tiles are placed permanently on the board (only geometry-altering and foreign powers are kept)</li>"
+  "<li> tiles you have used are discarded</li>"
+  "<li> tiles you have not used have their value increased, and are discarded</li>"
+  "<li> you draw 8 new tiles from the bag (if bag is empty, discarded tiles go back to the bag), and the shop has a new selection of 6 items</li>"
+  "<li> you have to pay a tax which increases in each round</li></ul></li>"
+  "<li>tiles bought from the shop can be used immediately or discarded for increased value</li>"
+  "<li>the topmost letter in the shop is always A, E, U, I, O</li>"
+  "<li>you start with a single standard copy of every letter in your bag; the shop sells letters with extra powers</li>"
+  "<li>the board is infinite, but you can only see and use tiles in distance at most 6 from already placed tiles</li>"
+  "<li>the multiplier is reduced by 1 for every time when you used the same word in the previous turns</li>"
+  "</ul>";
 
 extern "C" {
 
@@ -1592,29 +1622,7 @@ void view_help() {
 
   ss << "<div style=\"float:left;width:30%\">&nbsp;</div>";
   ss << "<div style=\"float:left;width:40%\">"; 
-  ss << "The rules:<br/>";
-  ss << "<ul>";
-  ss << "<li>Place tiles on the board<ul>";
-  ss << "<li>Any word (a complete line of at least two adjacent letters) must be valid</li>";
-  ss << "<li>placed tiles must be in a single word (it can include old tiles too)</li>";
-  ss << "<li>You score for all the new words you have created</li>";
-  ss << "<li>one of the words created must contain an old letter</li></ul></li>";
-  ss << "<li>The score for a word is the product of:<ul>";
-  ss << "<li>sum of the values of new tiles in the word</li>";
-  ss << "<li>sum of the values of all tiles in the word</li>";
-  ss << "<li>the multiplier (1 by default)</li></ul></li>";
-  ss << "<li>after each move: <ul>";
-  ss << "<li>standard copies of the tiles are placed permanently on the board (only geometry-altering and foreign powers are kept)</li>";
-  ss << "<li>tiles you have used are discarded</li>";
-  ss << "<li>tiles you have not used have their value increased, and are discarded</li>";
-  ss << "<li>you draw 8 new tiles from the bag (if bag is empty, discarded tiles go back to the bag), and the shop has a new selection of 6 items</li>";
-  ss << "<li>you have to pay a tax which increases in each round</li></ul></li>";
-  ss << "<li>tiles bought from the shop can be used immediately or discarded for increased value</li>";
-  ss << "<li>the topmost letter in the shop is always A, E, U, I, O</li>";
-  ss << "<li>you start with a single standard copy of every letter in your bag; the shop sells letters with extra powers</li>";
-  ss << "<li>the board is infinite, but you can only see and use tiles in distance at most 6 from already placed tiles</li>";
-  ss << "<li>the multiplier is reduced by 1 for every time when you used the same word in the previous turns</li><ul>";
-  ss << "</ul></ul>";
+  ss << rules;
 
   ss << "<br/><a onclick='back_to_game()'>" << str_back_to_game << "</a><br/>";
 
