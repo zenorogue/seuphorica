@@ -1008,6 +1008,7 @@ struct eval {
   set<vector<coord>> new_tricks;
   vector<string> used_words;
   int qdelay;
+  int retain_count;
   };
 
 eval ev;
@@ -1327,6 +1328,14 @@ void compute_score() {
     }
 
   ev.current_scoring = scoring.str();
+  ev.retain_count = 0;
+
+  for(auto& p: ev.used_tiles) {
+    auto& b = board.at(p);
+    auto& sp = gsp(b);
+    int val = sp.value * b.rarity;
+    if(has_power(b, sp::retain, val)) ev.retain_count += val;
+    }
   };
 
 string power_list() {
@@ -1458,6 +1467,7 @@ void draw_board() {
     // int pos = sts.find("svg");
     // sts.insert(pos+4, "draggable=\"true\" ondragstart=\"drag(event)\" onclick=\"alert('clicked!')\" ");
     ss << sts + " " + tile_desc(t);
+    if(id <= ev.retain_count) ss << " [retained]";
     if(has_power(t, sp::wild)) {
       for(char ch='A'; ch <= 'Z'; ch++)
         ss << " <a onclick='wild_become(" << id-1 << ", \"" << ch << "\")'>" << ch << "</a>";
