@@ -964,12 +964,13 @@ string spell_desc(int id, int qty = -1) {
   auto& sp2 = spells[sp.action_id];
 
   stringstream ss;
-  if(qty != -1) ss << "<a onclick='cast_spell(" << id << ")'>";
-  ss << "<font color=\"" << color_to_str(sp.color_value) << "\">" << sp.greek;
+  if(qty != -1 && color_descs) ss << "<a onclick='cast_spell(" << id << ")'>";
+  if(color_descs) ss << "<font color=\"" << color_to_str(sp.color_value) << "\">";
+  ss << sp.greek;
   if(sp.identified) ss << " " << sp2.caption;
   else ss << " " << sp.color;
-  ss << "</font>";
-  if(qty != -1) ss << "</a>";
+  if(color_descs) ss << "</font>";
+  if(qty != -1 && color_descs) ss << "</a>";
   if(qty != -1) ss << " (x" << qty << ")";
   if(sp.identified) ss << ": " << sp2.desc;
   else ss << ": " << str_unidentified;
