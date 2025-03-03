@@ -735,9 +735,10 @@ string power_description(const tile &t) {
 string short_desc(const tile& t) {
   auto& s = gsp(t);
   string out = s.caption;
-  if(t.rarity == 2) out = str_rare->get() + " " + out;
-  if(t.rarity == 3) out = str_epic->get() + " " + out;
-  if(t.rarity >= 4) out = str_legendary->get() + " " + out;
+  if(t.rarity >= 2 && t.special >= sp::first_artifact) out = str_legendary->get() + " " + out;
+  else if(t.rarity == 2) out = str_rare->get() + " " + out;
+  else if(t.rarity == 3) out = str_epic->get() + " " + out;
+  else if(t.rarity >= 4) out = str_legendary->get() + " " + out;
   out += " ";
   out += t.letter;
   out += to_string(t.value);
