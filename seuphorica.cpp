@@ -589,8 +589,6 @@ coord nocoord() { return origin(); }
 
 using vect2 = coord;
 
-vect2 get_mirror(vect2 v) { return vect2(v.y, v.x); }
-
 vector<vect2> windrose = {coord(1,0), coord(-1,0), coord(0,1), coord(0,-1)};
 
 vect2 to_xy(vect2 c) { return c; }
@@ -1096,25 +1094,25 @@ coord get_gigantic(coord x) {
   return x;
   }
 
+#ifndef ALTGEOM
 coord get_portal(coord x) {
   if(get_gigantic(x) != x) {
-    auto x1 = get_gigantic(x);
-    auto v = gigacover(x1);
-    for(int i=0; i<seuphorica::isize(v); i++) if(v[i] == x)
-      return gigacover(get_portal(x1))[i];
+    coord rel = x - get_gigantic(x);
+    return get_portal(x - rel) + rel;
     }
   return portals.at(x);
   }
 
+vect2 get_mirror(vect2 v) { return vect2(v.y, v.x); }
+
 void mirror(coord& at, vect2& prev) {
   if(get_gigantic(at) != at) {
-    auto at1 = get_gigantic(at);
-    auto v = gigacover(at1);
-    vector<int> reindex = {0,3,6,1,4,7,2,5,8};
-    for(int i=0; i<9; i++) if(v[i] == at) { at = v[reindex[i]]; break; }
+    auto rel = at - get_gigantic(at);
+    at = at - rel + get_mirror(rel);
     }
   prev = get_mirror(prev);
   }
+#endif
 
 void compute_score() {
 
