@@ -1677,6 +1677,33 @@ language *next_language = current;
 
 string dictionary_checked;
 
+vector<string> words_found;
+
+void find_words(string s) {
+  words_found.clear();
+  map<string, int> in_hand;
+  map<string, int> in_shop;
+  for(auto& t: drawn) in_hand[t.letter]++;
+  for(auto& t: shop) in_shop[t.letter]++;
+  int len = utf8_length(s);
+  for(const string& word: next_language->dictionary[len]) {
+    auto in_hand2 = in_hand;
+    auto in_shop2 = in_shop;
+    int spos = 0, wpos = 0;
+    for(int i=0; i<len; i++) {
+      string wi = word.substr(wpos, utf8_len(word[wpos])); wpos += utf8_len(word[wpos]);
+      string si = s.substr(spos, utf8_len(s[spos])); spos += utf8_len(s[spos]);
+      if(wi == si) continue;
+      if(si == ".") continue;
+      if(si == "$" && in_shop2[wi] > 0) { in_shop2[wi]--; continue; }
+      if((si == "?" || si == "$") && in_hand2[wi] > 0) { in_hand2[wi]--; continue; }
+      goto next_word;
+      }
+    words_found.push_back(word);
+    next_word: ;
+    }
+  }
+
 void update_dictionary(string s) {
   dictionary_checked = s;
   stringstream ss;
@@ -1684,29 +1711,13 @@ void update_dictionary(string s) {
   int len = utf8_length(s);
   if(len < 2) ss << str_least2;
   else {
-    map<string, int> in_hand;
-    map<string, int> in_shop;
-    for(auto& t: drawn) in_hand[t.letter]++;
-    for(auto& t: shop) in_shop[t.letter]++;
+    find_words(s);
     int qty = 0;
-    for(const string& word: next_language->dictionary[len]) {
-      auto in_hand2 = in_hand;
-      auto in_shop2 = in_shop;
-      int spos = 0, wpos = 0;
-      for(int i=0; i<len; i++) {
-        string wi = word.substr(wpos, utf8_len(word[wpos])); wpos += utf8_len(word[wpos]);
-        string si = s.substr(spos, utf8_len(s[spos])); spos += utf8_len(s[spos]);
-        if(wi == si) continue;
-        if(si == ".") continue;
-        if(si == "$" && in_shop2[wi] > 0) { in_shop2[wi]--; continue; }
-        if((si == "?" || si == "$") && in_hand2[wi] > 0) { in_hand2[wi]--; continue; }
-        goto next_word;
-        }
+    for(auto& word: words_found) {
       qty++;
       if(qty <= 200) {
         ss << word << " ";
         }
-      next_word: ;
       }
     if(qty == 0) ss << str_no_matching << " " << s << ".";
     else ss << " (" << qty << " " << str_matching << ")";
