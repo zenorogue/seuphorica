@@ -628,6 +628,13 @@ string spotname(coord p) {
   }
 
 void set_orientation(coord c, vect2 dir) {}
+
+/* geometry supports horizontal and vertical */
+bool gok_hv() { return true; }
+/* geometry supports default orientation */
+bool gok_rev() { return true; }
+/* geometry supports gigantic mirrors and gigantic portals */
+bool gok_gigacombo() { return true; }
 #endif
 
 int gmod(int a, int b) {
@@ -1227,7 +1234,7 @@ void compute_score() {
     set<coord> needed;
     for(auto p: just_placed) if(!has_power(board.at(p), sp::flying) && get_gigantic(p) == p) needed.insert(p);
     bool has_tricky = false;
-    int directions = 1;
+    int directions = gok_rev() ? 1 : 2;
     bool optional = board.count(get_advance(at, getback(next)));
     vector<coord> allword;
     set<language*> polyglot = { current };
@@ -1367,6 +1374,9 @@ void compute_score() {
       edd.evaluate(eds, current, scoring, true);
       illegal_words = true;
       }
+
+    // without rev, we need to remove the other direction
+    next = getback(next); advance(at, next); starts.erase({at, next});
     }
 
   if(just_placed.empty()) { scoring << str_you_can_skip << tax() << " 🪙."; }
@@ -1928,6 +1938,12 @@ bool bad_language(sp s) {
   return lang && !polyglot_languages.count(lang);
   }
 
+bool geom_allows(sp x) {
+  if(!gok_hv() && (x == sp::horizontal || x == sp::vertical)) return false;
+  if(!gok_rev() && x == sp::reversing) return false;
+  return true;
+  }
+
 void restart(const char *s, const char *poly, const char *_restricted) {
   if(!s[0]) gameseed = time(NULL);
   else gameseed = atoi(s);
@@ -1942,8 +1958,9 @@ void restart(const char *s, const char *poly, const char *_restricted) {
     if(ch == 'N') do_naughty = true;
     }
   for(int i=0; i < (int) sp::first_artifact; i++) {
-    special_allowed[i] = (i >= 2) && (do_naughty || i != (int) sp::naughty) && !bad_language(sp(i));
+    special_allowed[i] = (i >= 2) && (do_naughty || i != (int) sp::naughty) && !bad_language(sp(i)) && geom_allows(sp(i));
     }
+
   string restricted = _restricted;
   std::mt19937 restrict_rng(gameseed);
   game_restricted = (restricted != "");
@@ -2066,6 +2083,8 @@ sp generate_artifact() {
     for(int i=0; i<qty; i++) for(int j=0; j<i; j++) {
       if(art[i] == art[j]) reps = true;
       if(get_language(art[i]) && get_language(art[j])) reps = true;
+      if(!gok_gigacombo() && art[i] == sp::gigantic && (art[j] == sp::bending || art[j] == sp::portal)) reps = true;
+      if(!gok_gigacombo() && art[j] == sp::gigantic && (art[i] == sp::bending || art[i] == sp::portal)) reps = true;
       }
     if(reps) continue;
     break;
