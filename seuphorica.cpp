@@ -90,10 +90,6 @@ language::language(const string& name, const string& gamename, const string& fna
 void draw_board();
 
 #ifndef NONJS
-void activate_scry() {}
-#endif
-
-#ifndef NONJS
 void downloadSucceeded(emscripten_fetch_t *fetch) {
   language& l = *((language*) fetch->userData);
   string s;
@@ -685,6 +681,19 @@ void empower(coord c, int val) {
       }
     }
   }
+
+#ifndef NONJS
+void activate_scry() {}
+
+// for animations
+void snapshot() {}
+
+// an animation helper: declare that the last position of a tile was the map
+void from_map(coord co, tile& t) {}
+
+// an animation helper: declare that the clone is a clone of orig
+void is_clone(tile& orig, tile& clone) {}
+#endif
 
 /* note: if spell[1].action_id is 2, then spell[1].inventory refers to the number of held spells which perform spell[2].action, similarly spell[1].identified */
 
@@ -1929,7 +1938,7 @@ void restart(const char *s, const char *poly, const char *_restricted) {
 
 void draw_tiles(int qty = 8) {
   for(int i=0; i < qty; i++) {
-    if(deck.empty()) { swap(deck, discard); scry_active = false; }
+    if(deck.empty()) { snapshot(); swap(deck, discard); snapshot(); scry_active = false; }
     if(deck.empty()) break;
     if(scry_active) {
       drawn.emplace_back(std::move(deck[0]));
@@ -2045,6 +2054,7 @@ bool on_stay(coord c) {
   }
 
 void accept_move() {
+  snapshot();
   int tax_paid = tax();
   cash += ev.total_score - tax();
   total_gain += ev.total_score;
@@ -2099,6 +2109,7 @@ void accept_move() {
     if(!other_end) for(int i=selftrash; i<copies_used; i++) {
       empower(p, -1);
       auto b1 = b.clone();
+      from_map(p, b1);
       discard.push_back(b1);
       empower(p, +1);
       }
@@ -2132,9 +2143,11 @@ void accept_move() {
   add_to_log(ev.current_scoring);
   add_to_log("total score: "+to_string(ev.total_score)+" tax: "+to_string(tax_paid)+" cash in round "+to_string(roundindex)+": " + to_string(cash));
   drawn = retained;
+  snapshot();
   draw_tiles(qdraw);
   just_placed.clear();
   build_shop(qshop);
+  snapshot();
   draw_board();
   }
 
@@ -2272,10 +2285,12 @@ vector<spell> spells = {
        spell_message("You cannot redraw." + in_pl("Nie masz skąd ciągnąć."));
        return;
        }
+     snapshot();
      draw_tiles(1);
      string str = ("You replace " + short_desc(drawn[0]) + " with " + short_desc(drawn.back()) + ".") + in_pl("Zamieniasz " + short_desc(drawn[0]) + " na " + short_desc(drawn.back()));
      discard.push_back(drawn[0]);
      drawn.erase(drawn.begin());
+     snapshot();
      spell_message(str);
      }),
   spell("Violet" + in_pl("Fiolet"), 0xFF20FF, "Swap" + in_pl("Zamiana"), "Swap red/power and blue/stay symbols." + in_pl("Zamieniasz miejsca czerwone/moc i niebieskie/stój."), [] {
@@ -2291,7 +2306,10 @@ vector<spell> spells = {
     }),
   spell("Green" + in_pl("Zieleń"), 0x20FF20, "Double" + in_pl("Dwa"), "Duplicate the topmost tile." + in_pl("Podwaja najwyższą płytkę."), [] {
     string str = ("You duplicate " + in_pl("Podwajasz "))->get() + short_desc(drawn[0]) + ".";
+    snapshot();
     drawn.push_back(drawn[0].clone());
+    is_clone(drawn[0], drawn.back());
+    snapshot();
     spell_message(str);
     }),
   spell("Golden" + in_pl("Złoto"), 0xFFD500, "Charisma" + in_pl("Charyzma"), "Reduce the shop prices and the topmost tile value to 50% (rounded downwards)." + in_pl("Zmniejsza ceny i wartość najwyższej płytki do połowy (zaokrąglone w dół)."), [] {
@@ -2322,6 +2340,7 @@ vector<spell> spells = {
     }),
   spell("Brown" + in_pl("Brąz"), 0x804000, "Scry" + in_pl("Wróżba"), "See the order of tiles in your bag." + in_pl("Pokazuje kolejność płytek w worku."), [] {
     if(!scry_active) {
+      snapshot();
       scry_active = true;
       vector<tile> new_deck;
       while(deck.size()) {
@@ -2332,6 +2351,7 @@ vector<spell> spells = {
         }
       deck = std::move(new_deck);
       activate_scry();
+      snapshot();
       }
     string str = "Scrying: " + in_pl("Widzisz: ");
     int q = 0;
