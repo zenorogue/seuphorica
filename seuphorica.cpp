@@ -1110,7 +1110,7 @@ coord get_portal(coord x) {
   if(get_gigantic(x) != x) {
     auto x1 = get_gigantic(x);
     auto v = gigacover(x1);
-    for(int i=0; i<isize(v); i++) if(v[i] == x)
+    for(int i=0; i<seuphorica::isize(v); i++) if(v[i] == x)
       return gigacover(get_portal(x1))[i];
     }
   return portals.at(x);
