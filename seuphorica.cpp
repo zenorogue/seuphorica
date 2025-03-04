@@ -609,12 +609,6 @@ bool in_board(coord co) {
   return co.x >= minx && co.y >= miny && co.x <= maxx && co.y <= maxy;
   }
 
-vector<coord> gigacover(coord base) {
-  vector<coord> res;
-  for(int dx=0; dx<3; dx++) for(int dy=0; dy<3; dy++) res.push_back(base + vect2(dx,dy));
-  return res;
-  }
-
 vector<coord> orthoneighbors(coord base) {
   vector<coord> res;
   for(auto w: windrose) res.push_back(base + w);
@@ -625,7 +619,7 @@ vector<vect2> get_moves(coord base) {
   return { coord{1,0}, coord{0,1} };
   }
 
-vector<coord> radcover(coord base) {
+vector<coord> gigacover(coord base) {
   vector<coord> res;
   for(int dx: {-1,0,1}) for(int dy: {-1,0,1}) res.push_back(base + vect2(dx,dy));
   return res;
@@ -928,7 +922,7 @@ void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
   style b(lines, s.background, 1.5 * wide);
   style bempty(0xFF808080, 0xFF101010, 0.5);
   auto mysize = lsize;
-  if(has_power(t, sp::gigantic)) mysize *= 3;
+  if(has_power(t, sp::gigantic)) { mysize *= 3; x -= mysize; y -= mysize; }
 
   path pa(t.special != sp::notile ? b : bempty);
   pa.add(vec(x, y));
@@ -2102,7 +2096,7 @@ void build_shop(int qty = 6) {
   }
 
 bool under_radiation(coord c) {
-  for(auto c1: radcover(c)) {
+  for(auto c1: gigacover(c)) {
     if(board.count(c1) && has_power(board.at(c1), sp::radiating))
       return true;
     }
