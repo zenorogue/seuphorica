@@ -1117,6 +1117,16 @@ void mirror(coord& at, vect2& prev) {
   }
 #endif
 
+void quick_advance(coord& at, vect2& v) {
+  if(!gigants.count(at)) return;
+  while(true) {
+    auto at1 = get_advance(at, v);
+    if(get_gigantic(at1) == get_gigantic(at))
+      advance(at, v);
+    else break;
+    }
+  }
+
 void compute_score() {
 
   auto langs = polyglot_languages; langs.insert(current);
@@ -1170,7 +1180,7 @@ void compute_score() {
 
       bool seen_tricky = false;
       auto nxt = p1;
-      advance(nxt, dir1); if(gigants.count(p1)) { advance(nxt, dir1); advance(nxt, dir1); }
+      quick_advance(nxt, dir1); advance(nxt, dir1);
 
       if(board.count(nxt) || board.count(get_advance(p, prev))) {
         int steps = 0;
@@ -1182,7 +1192,7 @@ void compute_score() {
           if(seen_tricky) starts.emplace(at, getback(prev));
           advance(at, prev);
           auto &ta1 = board.at(at);
-          if(has_power(ta1, sp::gigantic)) { advance(at, prev); advance(at, prev); }
+          quick_advance(at, prev);
           if(has_power(ta1, sp::portal)) thru_portal(at, prev);
           if(has_power(ta1, sp::bending)) mirror(at, prev);
           }
@@ -1289,7 +1299,7 @@ void compute_score() {
       auto at_orig = at;
       if(has_power(b, sp::gigantic, val)) {
         at_orig = get_gigantic(at);
-        advance(at, next); advance(at, next);
+        quick_advance(at, next);
         size = 3;
         int qty = 0;
         for(auto c1: gigacover(at_orig)) for(auto at1: orthoneighbors(c1)) {
