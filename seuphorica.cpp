@@ -626,6 +626,8 @@ int dist(coord a, coord b) {
 string spotname(coord p) {
   return "(" + to_string(p.x) + "," + to_string(p.y) + ")";
   }
+
+void set_orientation(coord c, vect2 dir) {}
 #endif
 
 int gmod(int a, int b) {
@@ -1095,12 +1097,13 @@ coord get_gigantic(coord x) {
   }
 
 #ifndef ALTGEOM
-coord get_portal(coord x) {
+void thru_portal(coord& x, coord v) {
   if(get_gigantic(x) != x) {
     coord rel = x - get_gigantic(x);
-    return get_portal(x - rel) + rel;
+    x = portals.at(x - rel) + rel;
+    return;
     }
-  return portals.at(x);
+  x = portals.at(x);
   }
 
 vect2 get_mirror(vect2 v) { return vect2(v.y, v.x); }
@@ -1159,14 +1162,14 @@ void compute_score() {
     for(vect2 dir: forward_steps(p1)) {
       vect2 prev = getback(dir);
       auto &t = board.at(p1);
-      auto p = p1;
+      auto p = p1; auto dir1 = dir;
       if(has_power(t, sp::bending)) mirror(p, prev);
-      if(has_power(t, sp::portal)) p = get_portal(p1);
+      if(has_power(t, sp::portal)) { p = p1; thru_portal(p1, dir1);  }
 
       if(gigants.count(p) && gigants.count(get_advance(p, prev)) && gigants.at(get_advance(p, prev)) == gigants.at(p)) continue;
 
       bool seen_tricky = false;
-      auto nxt = p1; auto dir1 = dir;
+      auto nxt = p1;
       advance(nxt, dir1); if(gigants.count(p1)) { advance(nxt, dir1); advance(nxt, dir1); }
 
       if(board.count(nxt) || board.count(get_advance(p, prev))) {
@@ -1180,7 +1183,7 @@ void compute_score() {
           advance(at, prev);
           auto &ta1 = board.at(at);
           if(has_power(ta1, sp::gigantic)) { advance(at, prev); advance(at, prev); }
-          if(has_power(ta1, sp::portal)) at = get_portal(at);
+          if(has_power(ta1, sp::portal)) thru_portal(at, prev);
           if(has_power(ta1, sp::bending)) mirror(at, prev);
           }
         if(steps || board.count(nxt)) starts.emplace(at, getback(prev));
@@ -1301,7 +1304,7 @@ void compute_score() {
       if(has_power(b, sp::reversing, val)) directions = 2;
       if(has_power(b, sp::red, val)) for(auto at1: may_gigacover(at_orig, size == 3)) affect_mul(get_color(at1) == beRed);
       if(has_power(b, sp::blue, val)) for(auto at1: may_gigacover(at_orig, size == 3)) affect_mul(get_color(at1) == beBlue);
-      if(has_power(b, sp::portal, val)) { at = get_portal(at); ev.used_tiles.insert(at); needed.erase(at); }
+      if(has_power(b, sp::portal, val)) { thru_portal(at, next); ev.used_tiles.insert(at); needed.erase(at); }
       if(has_power(b, sp::bending, val)) mirror(at, next);
       if(has_power(b, sp::premium, val)) affect_mul(true);
       if(has_power(b, sp::horizontal, val)) affect_mul(to_xy(next).x);
@@ -2234,6 +2237,7 @@ void new_game() {
   for(char c: title) {
     string s0 = ""; s0 += c;
     board.emplace(co, tile{s0, sp::placed});
+    set_orientation(co, shift);
     advance(co, shift);
     }
 
@@ -2488,6 +2492,7 @@ void drop_hand_on(coord c) {
     int val1 = 0, val2 = 0;
     has_power(t, sp::portal, val1);
     board.emplace(c, t);
+    set_orientation(c, forward_steps(c)[0]);
     giant_growth(c);
     empower(c, +1);
     has_power(board.at(c), sp::portal, val2);
@@ -2507,6 +2512,7 @@ void drop_hand_on(coord c) {
   if(drawn.size()) {
      if(fail_gigantic(drawn[0], c)) return;
      board.emplace(c, std::move(drawn[0])); just_placed.insert(c); drawn.erase(drawn.begin());
+     set_orientation(c, forward_steps(c)[0]);
      giant_growth(c);
      empower(c, +1);
      if(has_power(board.at(c), sp::portal)) { placing_portal = true; portal_from = c; }
