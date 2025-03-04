@@ -563,6 +563,12 @@ struct tile {
   tile(string l, sp special, int value = 1) : letter(l), value(value), special(special) {
     id = next_id++; price = 0; rarity = 1;
     }
+
+  tile clone() {
+    tile t(letter, special, value);
+    t.price = price; t.rarity = rarity;
+    return t;
+    }
   };
 
 struct coord {
@@ -2090,7 +2096,12 @@ void accept_move() {
     if(on_stay(p)) selftrash++;
     if(has_power(b, sp::portal) && on_stay(portals.at(p))) selftrash++;
     if(has_power(b, sp::duplicator)) selftrash++;
-    if(!other_end) for(int i=selftrash; i<copies_used; i++) { empower(p, -1); discard.push_back(b); empower(p, +1); }
+    if(!other_end) for(int i=selftrash; i<copies_used; i++) {
+      empower(p, -1);
+      auto b1 = b.clone();
+      discard.push_back(b1);
+      empower(p, +1);
+      }
     bool keep = false;
     for(sp x: {sp::bending, sp::portal, sp::reversing, sp::gigantic}) if(has_power(b, x)) keep = true;
     if(get_language(b)) keep = true;
@@ -2273,12 +2284,14 @@ vector<spell> spells = {
     }),
   spell("Black" + in_pl("Czerń"), 0x505050, "Trash" + in_pl("Czystość"), "Trash the topmost tile." + in_pl("Wywala najwyższą płytkę."), [] {
     string str = ("You trash " + in_pl("Wyrzuczasz "))->get() + short_desc(drawn[0]) + ".";
+    snapshot();
     drawn.erase(drawn.begin());
+    snapshot();
     spell_message(str);
     }),
   spell("Green" + in_pl("Zieleń"), 0x20FF20, "Double" + in_pl("Dwa"), "Duplicate the topmost tile." + in_pl("Podwaja najwyższą płytkę."), [] {
     string str = ("You duplicate " + in_pl("Podwajasz "))->get() + short_desc(drawn[0]) + ".";
-    drawn.push_back(drawn[0]);
+    drawn.push_back(drawn[0].clone());
     spell_message(str);
     }),
   spell("Golden" + in_pl("Złoto"), 0xFFD500, "Charisma" + in_pl("Charyzma"), "Reduce the shop prices and the topmost tile value to 50% (rounded downwards)." + in_pl("Zmniejsza ceny i wartość najwyższej płytki do połowy (zaokrąglone w dół)."), [] {
