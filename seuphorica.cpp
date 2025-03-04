@@ -88,6 +88,10 @@ language::language(const string& name, const string& gamename, const string& fna
 void draw_board();
 
 #ifndef NONJS
+void activate_scry() {}
+#endif
+
+#ifndef NONJS
 void downloadSucceeded(emscripten_fetch_t *fetch) {
   language& l = *((language*) fetch->userData);
   string s;
@@ -2300,6 +2304,7 @@ vector<spell> spells = {
         deck.pop_back();
         }
       deck = std::move(new_deck);
+      activate_scry();
       }
     string str = "Scrying: " + in_pl("Widzisz: ");
     int q = 0;
