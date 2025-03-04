@@ -27,6 +27,8 @@ int next_id;
 int shop_id;
 int identifications = 0;
 
+int cheats = 0;
+
 bool scry_active;
 
 enum class language_state { not_fetched, fetch_started, fetch_progress, fetch_success, fetch_fail };
@@ -2137,6 +2139,7 @@ void new_game() {
   cash = 80;
   roundindex = 1;
   total_gain = 0;
+  cheats = 0;
   for(const string& s: current->alphabet) {
     deck.emplace_back(tile(s, sp::standard));
     }
@@ -2508,7 +2511,7 @@ extern "C" {
     }
 
   void cheat() {
-    cash += 1000000;
+    cash += 1000000; cheats++;
     for(auto t: discard) drawn.push_back(t);
     for(auto t: deck) drawn.push_back(t);
     build_shop(100);
