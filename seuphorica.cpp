@@ -615,10 +615,6 @@ vector<coord> orthoneighbors(coord base) {
   return res;
   }
 
-vector<vect2> get_moves(coord base) {
-  return { coord{1,0}, coord{0,1} };
-  }
-
 vector<coord> gigacover(coord base) {
   vector<coord> res;
   for(int dx: {-1,0,1}) for(int dy: {-1,0,1}) res.push_back(base + vect2(dx,dy));
@@ -2232,7 +2228,7 @@ void new_game() {
   string title = current->gamename;
 
   coord co = origin();
-  vect2 shift = get_moves(co)[0];
+  vect2 shift = forward_steps(co)[0];
   shift = getback(shift);
   for(int i=0; i<isize(title)/2; i++) advance(co, shift);
   shift = getback(shift);
