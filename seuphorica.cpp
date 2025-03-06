@@ -1376,7 +1376,9 @@ void compute_score() {
       }
 
     // without rev, we need to remove the other direction
-    next = getback(next); advance(at, next); starts.erase({at, next});
+    if(!gok_rev()) {
+      next = getback(next); advance(at, next); starts.erase({at, next});
+      }
     }
 
   if(just_placed.empty()) { scoring << str_you_can_skip << tax() << " 🪙."; }
