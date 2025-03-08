@@ -657,7 +657,6 @@ int gameseed;
 
 std::mt19937 draw_rng;
 std::mt19937 shop_rng;
-std::mt19937 board_rng;
 std::mt19937 spells_rng;
 
 int hrand(int i, std::mt19937& which = shop_rng) {
@@ -691,7 +690,7 @@ eBoardEffect get_color(coord c) {
   if(enabled_power && has_swap) has_red = true;
 
   if(!colors.count(c)) { 
-    std::size_t seed = gameseed;
+    uint64_t seed = gameseed;
     auto mixup = [&] (int i) { seed ^= i + 0x9e3779b9 + (seed << 6) + (seed >> 2); };
     for(auto ch: spotname(c)) {
       mixup(ch); mixup(0); mixup(0); mixup(0);
@@ -699,7 +698,7 @@ eBoardEffect get_color(coord c) {
 
     auto& r = board_cache[c];
     r = int(seed % 25);
-    if(r == 18 || r == 17) if(enabled_spells) r = 64 + hrand(isize(spells), board_rng);
+    if(r == 18 || r == 17) if(enabled_spells) r = 64 + (seed / 25) % isize(spells);
 
     if(r == 24) colors[c] = beRed;
     else if(r == 22 || r == 23) colors[c] = beBlue;
@@ -2271,7 +2270,6 @@ void new_game() {
     }
 
   shop_rng.seed(gameseed);
-  board_rng.seed(gameseed);
   draw_rng.seed(gameseed);
   spells_rng.seed(gameseed);
   board_cache.clear();
