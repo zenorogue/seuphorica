@@ -4,6 +4,8 @@ Like single-player Scrabble, but with deckbuilding.
 
 In Seuphorica, you place words on a board, in a crossword fashion. You start with only standard tiles with letters, but you can buy new tiles with special powers!
 
+This is the source code of the Web version of Seuphorica. There is also a RogueViz port with more intuitive, based on the same seuphorica.cpp (see rogueviz/seuphorica.cpp in the RogueViz source repo).
+
 V1: first version
 
 V2: fixed the missing scrollbars
@@ -43,7 +45,9 @@ V18: fixed (and nerfed the bonus to 50%) Delayed with multiple words; fixed some
 V19: Portuguese version, new powers (Symmetric, Gigantic, Caesar), list of all powers shown in custom game, clicking on a tile on board now displays info about it,
 fixed a bug with Polish and German foreign tiles description being displayed incorrectly, made daily less swingy by starting with 2 id'ed id spells
 
-Plans: better dictionary, translate the game itself to more languages, multi-letters, drag and drop
+V20: changed the English dictionary, better gigantic tile placement, fixed empowering portals, mark retained tiles
+
+Plans: translate the game itself to more languages, multi-letters
 
 Click [this](https://zenorogue.github.io/seuphorica/) to play!
 
