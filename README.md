@@ -53,7 +53,7 @@ Thanks to Michael, orange triangle, Corey Hardt, Jason Carr, FoxSylv, ambersz, a
 
 Dictionaries from:
 
-English: https://boardgames.stackexchange.com/questions/38366/latest-collins-scrabble-words-list-in-text-file (Collins)
+English: https://github.com/wordnik/wordlist (MIT license)
 polski: https://sjp.pl (GPL 2 / Creative Commons Attribution 4.0 International)
 deutsch: https://github.com/enz/german-wordlist (CC-1.0)
 français: https://github.com/Thecoolsim/French-Scrabble-ODS8/blob/main/French%20ODS%20dictionary.txt

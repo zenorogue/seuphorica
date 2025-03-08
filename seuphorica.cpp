@@ -64,7 +64,7 @@ int utf8_length(const string& s) {
   return len;
   }
 
-language english("English", "SEUPHORICA", "wordlist.txt", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "🇬🇧");
+language english("English", "SEUPHORICA", "wordnik.txt", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "🇬🇧");
 language polski("polski", "SEUFORIKA", "slowa.txt", "AĄBCĆDEĘFGHIJKLŁMNŃOÓPRSŚTUWYZŹŻ", "🇵🇱");
 language deutsch("deutsch", "SEUFORIKA", "german.txt", "ABCDEFGHIJKLMNOPQRSTUVWXYZÄÜÖ", "🇩🇪");
 language francais("français", "SEUFORICA", "french.txt", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "🇫🇷");
