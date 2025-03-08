@@ -10,16 +10,16 @@ test: seuphorica.js
 	cp index.html ~/public_html/seuphorica
 	cp seuphorica.wasm ~/public_html/seuphorica
 	cp seuphorica.js ~/public_html/seuphorica
-	cp wordlist.txt ~/public_html/seuphorica
+	cp wordnik.txt ~/public_html/seuphorica
 	cp slowa.txt ~/public_html/seuphorica
 	cp german.txt ~/public_html/seuphorica
 	cp french.txt ~/public_html/seuphorica
 	cp fise-2.txt ~/public_html/seuphorica
-	cp ptbr.txt ~/public_html/seuphorica
-	cp naughty-wordlist.txt ~/public_html/seuphorica
+	cp ptbr-v2.txt ~/public_html/seuphorica
+	cp naughty-wordnik.txt ~/public_html/seuphorica
 	cp naughty-slowa.txt ~/public_html/seuphorica
 	cp naughty-german.txt ~/public_html/seuphorica
 	cp naughty-french.txt ~/public_html/seuphorica
 	cp naughty-fise-2.txt ~/public_html/seuphorica
-	cp naughty-ptbr.txt ~/public_html/seuphorica
+	cp naughty-ptbr-v2.txt ~/public_html/seuphorica
 
