@@ -922,7 +922,7 @@ void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
   style b(lines, s.background, 1.5 * wide);
   style bempty(0xFF808080, 0xFF101010, 0.5);
   auto mysize = lsize;
-  if(has_power(t, sp::gigantic)) { mysize *= 3; x -= mysize; y -= mysize; }
+  if(has_power(t, sp::gigantic)) { x -= mysize; y -= mysize; mysize *= 3; }
 
   path pa(t.special != sp::notile ? b : bempty);
   pa.add(vec(x, y));
