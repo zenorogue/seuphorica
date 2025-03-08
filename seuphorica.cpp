@@ -579,10 +579,6 @@ struct coord {
   bool operator != (const coord& b) const { return tie(x,y) != tie(b.x, b.y); }
   };
 
-vector<int> get_path(coord c) {
-  return {0, 0, 0, c.x, 0, 0, 0, c.y, 0, 0, 0};
-  }
-
 coord origin() { return coord{0,0}; }
 
 coord nocoord() { return origin(); }
@@ -695,9 +691,11 @@ eBoardEffect get_color(coord c) {
   if(enabled_power && has_swap) has_red = true;
 
   if(!colors.count(c)) { 
-    vector<int> p = get_path(c);
     std::size_t seed = gameseed;
-    for(auto i: p) seed ^= i + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    auto mixup = [&] (int i) { seed ^= i + 0x9e3779b9 + (seed << 6) + (seed >> 2); };
+    for(auto ch: spotname(c)) {
+      mixup(ch); mixup(0); mixup(0); mixup(0);
+      }
 
     auto& r = board_cache[c];
     r = int(seed % 25);
