@@ -2540,7 +2540,6 @@ void drop_hand_on(coord c) {
   if(drawn.size()) {
      if(fail_gigantic(drawn[0], c)) return;
      board.emplace(c, std::move(drawn[0])); just_placed.insert(c); drawn.erase(drawn.begin());
-     set_orientation(c, forward_steps(c)[0]);
      giant_growth(c);
      empower(c, +1);
      if(has_power(board.at(c), sp::portal)) { placing_portal = true; portal_from = c; }
