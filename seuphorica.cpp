@@ -587,7 +587,11 @@ using vect2 = coord;
 
 vector<vect2> windrose = {coord(1,0), coord(-1,0), coord(0,1), coord(0,-1)};
 
-vect2 to_xy(vect2 c) { return c; }
+// which == 0: horizontal, which == 1: vertical
+bool is_dir(vect2 c, int which) {
+  if(which == 0) return c.y == 0;
+  if(which == 1) return c.x == 0;
+  }
 
 int minx, miny, maxx, maxy;
 
@@ -1312,6 +1316,8 @@ void compute_score() {
         affect_mul(qty > 4);
         }
 
+      bool hor = false, ver = false;
+
       if(has_power(b, sp::symmetric, val)) eds.symmetric_at[eds.word_length] = val;
       if(has_power(b, sp::tricky, val)) has_tricky = true;
       if(has_power(b, sp::soothing, val)) eds.qsooth = max(eds.qsooth, val);
@@ -1321,8 +1327,8 @@ void compute_score() {
       if(has_power(b, sp::portal, val)) { thru_portal(at, next); ev.used_tiles.insert(at); needed.erase(at); }
       if(has_power(b, sp::bending, val)) mirror(at, next);
       if(has_power(b, sp::premium, val)) affect_mul(true);
-      if(has_power(b, sp::horizontal, val)) affect_mul(to_xy(next).x);
-      if(has_power(b, sp::vertical, val)) affect_mul(to_xy(next).y);
+      if(has_power(b, sp::horizontal, val)) affect_mul(hor = is_dir(getback(next), 0));
+      if(has_power(b, sp::vertical, val)) affect_mul(ver = is_dir(getback(next), 1));
       if(has_power(b, sp::naughty, val)) { eds.naughtymul += val; eds.naughtysooth++; }
       if(has_power(b, sp::initial, val)) { affect_mul(eds.word_length == 0, 1); }
       if(has_power(b, sp::final, val)) { affect_mul(eds.word_length == 0, 2); }
@@ -1354,6 +1360,9 @@ void compute_score() {
       if(has_power(b, sp::initial, val)) edr.mul -= val;
       if(has_power(b, sp::final, val)) affect_mul(!board.count(at), 1);
       if(has_power(b, sp::initial, val)) affect_mul(!board.count(at), 2);
+      // in ALTGEOM may be no longer horizontal/vertical, even if it was in the other direction...
+      if(has_power(b, sp::horizontal, val) && hor && !is_dir(getback(next), 0) && board.count(at)) { affect_mul(false); val = -val; affect_mul(true); }
+      if(has_power(b, sp::vertical, val) && ver && !is_dir(getback(next), 1) && board.count(at)) { affect_mul(false); val = -val; affect_mul(true); }
       }
     if(needed.empty()) ev.valid_move = true;
     bool is_legal = false;
