@@ -2521,7 +2521,6 @@ void drop_hand_on(coord c) {
     int val1 = 0, val2 = 0;
     has_power(board.at(portal_from), sp::portal, val1);
     board.emplace(c, t);
-    set_orientation(c, forward_steps(c)[0]);
     giant_growth(c);
     empower(c, +1);
     has_power(board.at(c), sp::portal, val2);
