@@ -1232,7 +1232,9 @@ void compute_score() {
     }
 
   stringstream scoring;
+  set<pair<coord, vect2>> dups;
   for(auto ss: starts) {
+    if(dups.count(ss)) continue;
     auto at = ss.first;
     auto next = ss.second;
     string word;
@@ -1387,7 +1389,7 @@ void compute_score() {
 
     // without rev, we need to remove the other direction
     if(!gok_rev_on(next)) {
-      next = getback(next); advance(at, next); starts.erase({at, canonicize(next)});
+      next = getback(next); advance(at, next); dups.insert({at, canonicize(next)});
       }
     }
 
