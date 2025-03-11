@@ -928,7 +928,7 @@ void render_tile(pic& p, int x, int y, tile& t, const string& onc) {
   unsigned lines = 0xFF000000;
   int wide = 1;
   if(t.rarity == 2) lines = 0xFF4040FF, wide = 2;
-  if(t.rarity == 3) lines = 0xFFFF80FF, wide = 2;
+  if(t.rarity == 3) lines = 0xFFC040FF, wide = 2;
   if(t.rarity >= 4) lines = 0x40FF80FF, wide = 2;
   if(t.special >= sp::first_artifact) lines = 0xFFFFD500, wide = 2;
   style b(lines, s.background, 1.5 * wide);
