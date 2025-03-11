@@ -95,7 +95,11 @@ void downloadSucceeded(emscripten_fetch_t *fetch) {
   string s;
   for(int i=0; i<fetch->numBytes; i++) {
     char ch = fetch->data[i];
-    if(ch == 10) { l.dictionary[utf8_length(s)].insert(s); s = ""; }
+    if(ch == 10) {
+      int len = utf8_length(s);
+      if(len > 1) l.dictionary[len].insert(s);
+      s = "";
+      }
     else s += ch;
     }
   l.dictionary[utf8_length(l.gamename)].insert(l.gamename);
