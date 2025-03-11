@@ -631,10 +631,14 @@ void set_orientation(coord c, vect2 dir) {}
 
 /* geometry supports horizontal and vertical */
 bool gok_hv() { return true; }
-/* geometry supports default orientation */
+/* allow reversing tiles */
 bool gok_rev() { return true; }
+/* if no, it means that words are accepted in both directions for that particular dir */
+bool gok_rev_on(vect2 dir) { return true; }
 /* geometry supports gigantic mirrors and gigantic portals */
 bool gok_gigacombo() { return true; }
+/* in some ALTGEOM vect2s may have multiple equivalent forms -- we only want one in `starts` */
+vect2 canonicize(vect2 v) { return v; }
 #endif
 
 int gmod(int a, int b) {
@@ -1204,7 +1208,7 @@ void compute_score() {
           if(has_power(ta1, sp::portal)) thru_portal(at, prev);
           if(has_power(ta1, sp::bending)) mirror(at, prev);
           }
-        if(steps || board.count(nxt)) starts.emplace(at, getback(prev));
+        if(steps || board.count(nxt)) starts.emplace(at, canonicize(getback(prev)));
         }
       }
     }
@@ -1235,7 +1239,7 @@ void compute_score() {
     set<coord> needed;
     for(auto p: just_placed) if(!has_power(board.at(p), sp::flying) && get_gigantic(p) == p) needed.insert(p);
     bool has_tricky = false;
-    int directions = gok_rev() ? 1 : 2;
+    int directions = gok_rev_on(next) ? 1 : 2;
     bool optional = board.count(get_advance(at, getback(next)));
     vector<coord> allword;
     set<language*> polyglot = { current };
@@ -1382,8 +1386,8 @@ void compute_score() {
       }
 
     // without rev, we need to remove the other direction
-    if(!gok_rev()) {
-      next = getback(next); advance(at, next); starts.erase({at, next});
+    if(!gok_rev_on(next)) {
+      next = getback(next); advance(at, next); starts.erase({at, canonicize(next)});
       }
     }
 
