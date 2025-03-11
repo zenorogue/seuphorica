@@ -1184,19 +1184,19 @@ void compute_score() {
     for(vect2 dir: forward_steps(p1)) {
       vect2 prev = getback(dir);
       auto &t = board.at(p1);
-      auto p = p1; auto dir1 = dir;
-      if(has_power(t, sp::bending)) mirror(p, prev);
-      if(has_power(t, sp::portal)) { p = p1; thru_portal(p1, dir1);  }
+      auto at = p1;
 
-      if(gigants.count(p) && gigants.count(get_advance(p, prev)) && gigants.at(get_advance(p, prev)) == gigants.at(p)) continue;
+      if(has_power(t, sp::bending)) mirror(at, prev);
+      if(has_power(t, sp::portal)) thru_portal(at, prev);
+
+      if(gigants.count(at) && gigants.count(get_advance(at, prev)) && gigants.at(get_advance(at, prev)) == gigants.at(at)) continue;
 
       bool seen_tricky = false;
-      auto nxt = p1;
+      auto nxt = p1; auto dir1 = dir;
       quick_advance(nxt, dir1); advance(nxt, dir1);
 
-      if(board.count(nxt) || board.count(get_advance(p, prev))) {
+      if(board.count(nxt) || board.count(get_advance(at, prev))) {
         int steps = 0;
-        auto at = p;
         while(board.count(get_advance(at, prev))) {
           steps++; if(steps >= 10000) { ev.current_scoring = str_infinite; ev.valid_move = false; return; }
           auto &ta = board.at(at);
