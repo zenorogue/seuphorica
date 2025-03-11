@@ -1182,7 +1182,8 @@ void compute_score() {
 
   if(placing_portal) { ev.current_scoring = str_you_must_finish;  ev.valid_move = false; return; }
 
-  set<pair<coord, vect2>> starts;
+  /* starts and tricky_starts need to be separate to handle dups correctly (starts need to be analyzed first) */
+  set<pair<coord, vect2>> starts, tricky_starts;
 
   for(auto p1: just_placed) {
     for(vect2 dir: forward_steps(p1)) {
@@ -1205,7 +1206,7 @@ void compute_score() {
           steps++; if(steps >= 10000) { ev.current_scoring = str_infinite; ev.valid_move = false; return; }
           auto &ta = board.at(at);
           if(has_power(ta, sp::tricky)) seen_tricky = true;
-          if(seen_tricky) starts.emplace(at, getback(prev));
+          if(seen_tricky) tricky_starts.emplace(at, canonicize(getback(prev)));
           advance(at, prev);
           auto &ta1 = board.at(at);
           quick_advance(at, prev);
@@ -1237,8 +1238,9 @@ void compute_score() {
 
   stringstream scoring;
   set<pair<coord, vect2>> dups;
-  for(auto ss: starts) {
+  for(auto wset: {&starts, &tricky_starts}) for(auto ss: *wset) {
     if(dups.count(ss)) continue;
+    dups.insert(ss);
     auto at = ss.first;
     auto next = ss.second;
     string word;
@@ -1373,6 +1375,11 @@ void compute_score() {
       // in ALTGEOM may be no longer horizontal/vertical, even if it was in the other direction...
       if(has_power(b, sp::horizontal, val) && hor && !is_dir(getback(next), 0) && board.count(at)) { affect_mul(false); val = -val; affect_mul(true); }
       if(has_power(b, sp::vertical, val) && ver && !is_dir(getback(next), 1) && board.count(at)) { affect_mul(false); val = -val; affect_mul(true); }
+
+      // without rev, we need to remove the other direction
+      if(!gok_rev_on(next)) {
+        dups.insert({at, canonicize(getback(next))});
+        }
       }
     if(needed.empty()) ev.valid_move = true;
     bool is_legal = false;
@@ -1389,11 +1396,6 @@ void compute_score() {
     if(!is_legal) {
       edd.evaluate(eds, current, scoring, true);
       illegal_words = true;
-      }
-
-    // without rev, we need to remove the other direction
-    if(!gok_rev_on(next)) {
-      next = getback(next); advance(at, next); dups.insert({at, canonicize(next)});
       }
     }
 
