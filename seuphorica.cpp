@@ -22,7 +22,7 @@ template<class T> int isize(const T& x) { return x.size(); }
 
 bool game_running;
 bool game_restricted;
-bool is_daily;
+bool is_daily, is_seeded, is_basic;
 int daily;
 
 int next_id;
@@ -36,6 +36,9 @@ bool scry_active;
 enum class language_state { not_fetched, fetch_started, fetch_progress, fetch_success, fetch_fail };
 
 bool enabled_spells, enabled_stay, enabled_power, enabled_id;
+
+pair<int, string> best_word;
+int best_turn_score;
 
 struct language {
   language_state state;
@@ -1105,6 +1108,7 @@ struct eval {
   vector<string> used_words;
   int qdelay;
   int retain_count;
+  pair<int, string> new_best_word;
   };
 
 eval ev;
@@ -1146,6 +1150,8 @@ void quick_advance(coord& at, vect2& v) {
   }
 
 void compute_score() {
+
+  ev.new_best_word = {-1, "?"};
 
   auto langs = polyglot_languages; langs.insert(current);
   for(auto lang: langs) {
@@ -1293,6 +1299,7 @@ void compute_score() {
         scoring << "<br/>";
         ev.used_words.push_back(word);
         ev.total_score += score;
+        if(score > ev.new_best_word.first) ev.new_best_word = {score, word};
         ev.qdelay += eds.start_delay;
         }
       } edd, edr;
@@ -1481,6 +1488,7 @@ void gamestats(stringstream& ss) {
   if(game_restricted) {
     ss << power_list() << "<br/>";
     }
+  if(is_basic) ss << "<br>basic game<br/>";
   int sm0 = stacked_mults[roundindex%3];
   int sm1 = stacked_mults[(roundindex+1)%3];
   int sm2 = stacked_mults[(roundindex+2)%3];
@@ -1637,7 +1645,7 @@ void draw_board() {
     // sts.insert(pos+4, "draggable=\"true\" ondragstart=\"drag(event)\" onclick=\"alert('clicked!')\" ");
     ss << sts + " " + tile_desc(t) + " <br/>";
     }
-  if(drawn.size() && drawn[0].price) {
+  if(isize(drawn) && drawn[0].price) {
     pic p;
     render_tile(p, 0, 0, empty_tile, " onclick='back_to_shop()'");
     ss << SVG_to_string(p) << " " << str_cancel_the_purchase << "<br/>";
@@ -1856,7 +1864,7 @@ void view_dictionary() {
   ss << "<div style=\"float:left;width:40%\">"; 
   ss << str_dict_help << "</br><br/>";
 
-  if(polyglot_languages.size()) {
+  if(isize(polyglot_languages)) {
     for(auto l: languages) {
       add_button(ss, "set_language_dic(\"" + l->name + "\")", l->name + " " + l->flag);
       }
@@ -1967,9 +1975,10 @@ bool geom_allows(sp x) {
   }
 
 void restart(const char *s, const char *poly, const char *_restricted) {
-  if(!s[0]) gameseed = time(NULL);
-  else gameseed = atoi(s);
-  is_daily = false;
+  is_seeded = s[0];
+  if(is_seeded) gameseed = atoi(s);
+  else gameseed = time(NULL);
+  is_daily = false; is_basic = false;
   string spoly = poly;
   polyglot_languages = {};
   bool do_naughty = false;
@@ -1977,18 +1986,20 @@ void restart(const char *s, const char *poly, const char *_restricted) {
     if(ch >= 'a' && ch < 'a' + isize(languages))
       polyglot_languages.insert(languages[ch - 'a']);
     if(ch == 'D') is_daily = true;
+    if(ch == 'B') is_basic = true;
     if(ch == 'N') do_naughty = true;
     }
   for(int i=0; i < (int) sp::first_artifact; i++) {
     special_allowed[i] = (i >= 2) && (do_naughty || i != (int) sp::naughty) && !bad_language(sp(i)) && geom_allows(sp(i));
     }
-
+  if(is_basic) special_allowed[int(sp::wizard)] = special_allowed[int(sp::redrawing)] = false;
+  
   string restricted = _restricted;
   std::mt19937 restrict_rng(gameseed);
   game_restricted = (restricted != "");
 
-  enabled_spells = true;
-  enabled_stay = true;
+  enabled_spells = !is_basic;
+  enabled_stay = !is_basic;
   enabled_power = true;
   enabled_id = true;
 
@@ -2164,6 +2175,10 @@ bool on_stay(coord c) {
 
 void accept_move() {
   snapshot();
+  if(ev.total_score > best_turn_score) {
+    best_turn_score = ev.total_score;
+    best_word = ev.new_best_word;
+    }
   int tax_paid = tax();
   cash += ev.total_score - tax();
   total_gain += ev.total_score;
@@ -2299,10 +2314,15 @@ void new_game() {
   colors.clear();
 
   game_log.clear();
-  add_to_log("started SEUPHORICA v20");
+  add_to_log("started SEUPHORICA v" SEUPHORICA_VERSION);
+  if(is_basic) add_to_log("basic game");
   add_to_log(power_list());
+  if(!is_basic) add_to_log("spells: " + its(enabled_spells) + " stay: " + its(enabled_stay) + " power: " + its(enabled_power) + " id: " + its(enabled_id));
   draw_tiles();
   shop_id = 0;
+  best_word = {-1, "?"};
+  best_turn_score = -1;
+
   build_shop();
   colors_swapped = false;
   word_use_count.clear();
