@@ -1,3 +1,5 @@
+#define SEUPHORICA_VERSION "20"
+
 #ifndef NONJS
 #include <iostream>
 #include <string>
